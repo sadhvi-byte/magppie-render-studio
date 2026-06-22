@@ -1,21 +1,22 @@
 // api/render.js
 //
 // Vercel serverless function for Magppie Render Studio.
-// Receives a PaletteCAD view plus the dropdown selections, assembles the
-// render prompt, sends it to Higgsfield with the view as the structural
-// reference, and returns the finished image URL.
+// Uploads the PaletteCAD view to Higgsfield, assembles the render prompt,
+// generates the styled render, and returns the image URL.
 //
-// Credentials and the model endpoint are read from environment variables,
-// so nothing sensitive ever reaches the browser.
+// Note: image upload uses the v1 client (the v2 client only exposes
+// subscribe), and generation uses the v2 client.
 
 import { createHiggsfieldClient } from "@higgsfield/client/v2";
+import { HiggsfieldClient } from "@higgsfield/client";
 
 export const config = { maxDuration: 60 };
 
-// HIGGSFIELD_MODEL is the editing endpoint the render runs on. Confirmed in
-// testing that Nano Banana Pro handles this edit well; set HIGGSFIELD_MODEL in
-// Vercel to its exact Cloud API endpoint string from your Higgsfield catalogue.
-const MODEL = process.env.HIGGSFIELD_MODEL || "flux-pro/kontext/max/image-to-image";
+// The editing endpoint. flux-pro/kontext/max/text-to-image is confirmed in the
+// SDK docs and accepts a reference image for editing. To run Nano Banana Pro or
+// GPT Image 2 instead, set HIGGSFIELD_MODEL in Vercel to that model's endpoint
+// string from your Higgsfield dashboard.
+const MODEL = process.env.HIGGSFIELD_MODEL || "flux-pro/kontext/max/text-to-image";
 
 // ---- Silverstone finishes (used for both countertop and cabinet) ----
 const STONES = {
@@ -91,14 +92,17 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Higgsfield credentials are not configured on the server." });
     }
 
+    // Upload the view to Higgsfield's CDN using the v1 client.
+    const uploader = new HiggsfieldClient({ apiKey, apiSecret });
+    const buffer = Buffer.from(image.split(",")[1], "base64");
+    const inputUrl = await uploader.uploadImage(buffer, format);
+
+    // Generate the styled render using the v2 client.
     const client = createHiggsfieldClient({
       credentials: apiKey + ":" + apiSecret,
       pollInterval: 2000,
       maxPollTime: 55000
     });
-
-    const buffer = Buffer.from(image.split(",")[1], "base64");
-    const inputUrl = await client.uploadImage(buffer, format);
 
     const cabinetStone = STONES[cabinet] || STONES["taj"];
     const prompt = buildPrompt({
