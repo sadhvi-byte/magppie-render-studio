@@ -115,6 +115,9 @@
   .compare .seg.active { background: var(--green); color: #fff; }
 
   .disclaimer { margin-top: 26px; padding: 16px 18px; background: var(--sand-soft); border-radius: 4px; font-size: 12.5px; color: #6F6E67; line-height: 1.55; max-width: 760px; }
+  .layout-check { margin-top: 22px; padding: 12px 16px; border-radius: 4px; font-family: "DM Sans", sans-serif; font-size: 13px; line-height: 1.5; max-width: 760px; background: #EEF3EF; border: 1px solid #DCE7DF; color: var(--green); }
+  .layout-check.drift { background: #FBF3EC; border-color: #ECDAC8; color: #8A5A2B; }
+  .layout-check b { font-weight: 600; letter-spacing: .02em; text-transform: uppercase; font-size: 11px; display: block; margin-bottom: 3px; opacity: .8; }
   .err { margin-top: 22px; padding: 16px 18px; border: 1px solid #E3C9BE; background: #FBF1EC; border-radius: 4px; font-size: 13.5px; color: #8A4B33; max-width: 760px; display: none; }
   .err.show { display: block; }
 
@@ -228,6 +231,8 @@
         <button class="btn" id="download">Download render</button>
       </div>
     </div>
+
+    <div class="layout-check" id="layout-check" style="display:none"></div>
 
     <div class="disclaimer" id="disclaimer" style="display:none">
       Visualisation is indicative of material mood and finish direction only. The final installed kitchen may vary slightly in tone and texture depending on lighting conditions and slab selection.
@@ -356,6 +361,7 @@
     $("result").style.display = "none";
     $("render-meta").style.display = "none";
     $("disclaimer").style.display = "none";
+    $("layout-check").style.display = "none";
     $("err").classList.remove("show");
     $("loading").style.display = "grid";
     $("render-heading").textContent = "Rendering your kitchen";
@@ -393,6 +399,15 @@
         $("compare").style.display = "inline-flex";
         $("render-meta").style.display = "flex";
         $("disclaimer").style.display = "block";
+        const lc = $("layout-check");
+        if (data.verify) {
+          const drift = /drift/i.test(data.verify);
+          lc.className = "layout-check" + (drift ? " drift" : "");
+          lc.innerHTML = "<b>Layout check</b>" + data.verify.replace(/</g, "&lt;");
+          lc.style.display = "block";
+        } else {
+          lc.style.display = "none";
+        }
       };
       img.src = data.url;
     } catch (e) {
@@ -402,6 +417,7 @@
       $("render-sub").textContent = "";
       const box = $("err"); box.textContent = e.message; box.classList.add("show");
       $("compare").style.display = "none";
+      $("layout-check").style.display = "none";
       $("render-meta").style.display = "flex";
     } finally {
       state.busy = false; refresh();
