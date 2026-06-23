@@ -1,22 +1,26 @@
 // api/render.js
 //
-// Vercel serverless function for Magppie Render Studio.
-// Uploads the PaletteCAD view to Higgsfield, assembles the render prompt,
-// generates the styled render, and returns the image URL.
+// Vercel serverless function for Magppie Render Studio (OpenAI build).
 //
-// Note: image upload uses the v1 client (the v2 client only exposes
-// subscribe), and generation uses the v2 client.
+// Staged guardrail pipeline for faithful renders:
+//   1. Analyze  - a vision pass reads the uploaded kitchen's exact layout.
+//   2. Compose  - that becomes a strict "keep this layout, change only these
+//                 surfaces" instruction.
+//   3. Edit     - gpt-image-2 renders at high input fidelity.
+//   4. Verify   - a vision pass compares the render to the original and reports
+//                 whether the layout held.
+//
+// Steps 1 and 4 degrade gracefully: if they fail, the render still returns.
+// Only OPENAI_API_KEY is needed.
 
-import { createHiggsfieldClient } from "@higgsfield/client/v2";
-import { HiggsfieldClient } from "@higgsfield/client";
+import OpenAI, { toFile } from "openai";
 
 export const config = { maxDuration: 60 };
 
-// The editing endpoint. flux-pro/kontext/max/text-to-image is confirmed in the
-// SDK docs and accepts a reference image for editing. To run Nano Banana Pro or
-// GPT Image 2 instead, set HIGGSFIELD_MODEL in Vercel to that model's endpoint
-// string from your Higgsfield dashboard.
-const MODEL = process.env.HIGGSFIELD_MODEL || "flux-pro/kontext/max/text-to-image";
+const IMAGE_MODEL   = process.env.OPENAI_IMAGE_MODEL   || "gpt-image-2";
+const VISION_MODEL  = process.env.OPENAI_VISION_MODEL  || "gpt-4o";
+const IMAGE_SIZE    = process.env.OPENAI_IMAGE_SIZE    || "1536x864"; // 16:9 for Canva
+const IMAGE_QUALITY = process.env.OPENAI_IMAGE_QUALITY || "high";
 
 // ---- Silverstone finishes (used for both countertop and cabinet) ----
 const STONES = {
@@ -28,7 +32,6 @@ const STONES = {
   "trevi":         { name: "Trevi",          desc: "a soft, even light-grey stone with a smooth concrete-like surface, subtle vertical cloud movement and faint hairline veining, in a quiet matte finish" }
 };
 
-// ---- Glass options ----
 const GLASS = {
   clear:   "clear glass, fully transparent with crisp clean edges",
   frosted: "frosted glass, softly opaque and evenly diffusing",
@@ -36,27 +39,32 @@ const GLASS = {
   bronze:  "bronze-tinted glass, smoky and warm, semi-transparent"
 };
 
-// ---- Lighting presets. "default" is the Magppie multi-level setup. ----
 const LIGHTING = {
-  default: "Integrated lighting, shown as real installed LED, warm and subtle and never theatrical: soft daylight from a ceiling sunroof above; under-counter LED beneath the countertop overhang; under-cabinet LED washing down onto the countertop and backsplash; a skirting LED at the plinth glowing softly onto the floor; and vertical LED strips inside the glass-fronted upper cabinets lighting the shelves. Render realistic soft shadows and gentle reflections on the stone surfaces."
+  default: "Integrated lighting, shown as real installed LED, warm and subtle and never theatrical: soft daylight from a ceiling sunroof above; under-counter LED beneath the countertop overhang; under-cabinet LED washing down onto the countertop and backsplash; a skirting LED at the plinth glowing softly onto the floor; and vertical LED strips inside the glass-fronted upper cabinets lighting the shelves. Realistic soft shadows and gentle reflections on the stone surfaces."
 };
 
-// ---- Fixed profile (not user-selectable in the current layout) ----
 const PROFILE = "slim brushed brass frames with a warm satin finish and soft highlights";
 
-function buildPrompt({ stone, cabinet, glass, lighting }) {
+const ANALYZE_PROMPT =
+  "Describe the exact spatial layout of this kitchen in 3 to 4 sentences: the positions and counts of tall units, wall and upper cabinets, base cabinets, any island, and the cooktop, oven, sink, and window, using clear left, centre, and right and upper and lower references, plus the camera viewpoint. Be concrete and factual. This description will be used to keep the layout identical while only the surface materials are changed.";
+
+const VERIFY_PROMPT =
+  "The first image is an original kitchen design view. The second image is a restyled photorealistic render meant to keep the same layout. In one short sentence, state whether the render preserves the same layout, cabinet positions, island, appliances, window, and camera angle. Begin with 'Layout preserved' if it matches well, or 'Possible drift' followed by what differs, if there are notable structural changes.";
+
+function buildPrompt({ stone, cabinet, glass, lighting, layout }) {
+  const layoutLine = layout ? "The existing kitchen layout, to preserve exactly: " + layout + "\n\n" : "";
   return [
-    "Photorealistic architectural render of the exact kitchen shown in the reference image, looking like a real photograph of an installed luxury kitchen.",
-    "Preserve the layout precisely: keep all cabinet and shutter positions, the island and appliance placement, window positions, and the camera angle exactly as shown. Do not move, add, or remove any cabinetry.",
+    "You are given a photo of a kitchen design view. Re-render it as a photorealistic, photographic image of the same kitchen, fully installed and finished.",
+    layoutLine + "Preserve the layout exactly: keep every cabinet and shutter position, the island and appliance placement, window positions, proportions, and the camera angle identical to the input. Do not move, add, or remove any cabinetry. Change only the surface materials and finishes listed below.",
     "",
-    "Re-render the surfaces:",
+    "Surfaces to apply:",
     "- Countertop and backsplash: " + stone + ".",
     "- Cabinet shutters, clad in " + cabinet + ".",
     "- Upper glass shutters: " + glass + ", framed in " + PROFILE + ".",
     "",
     lighting,
     "",
-    "Accurate to a real, buildable Magppie kitchen, with no exaggerated glow, no impossible reflections, and no fantasy elements. A wide 16:9 composition. No people, no text, no watermarks, no logos."
+    "Accurate to a real, buildable Magppie kitchen. No exaggerated glow, no impossible reflections, no fantasy elements, no people, no text, no watermarks, no logos."
   ].join("\n");
 }
 
@@ -86,52 +94,74 @@ export default async function handler(req, res) {
     const format = mimeToFormat(image);
     if (!format) return res.status(400).json({ error: "The uploaded view must be a PNG or JPG image." });
 
-    const apiKey = process.env.HIGGSFIELD_API_KEY;
-    const apiSecret = process.env.HIGGSFIELD_API_SECRET;
-    if (!apiKey || !apiSecret) {
-      return res.status(500).json({ error: "Higgsfield credentials are not configured on the server." });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "OPENAI_API_KEY is not configured on the server." });
+
+    const client = new OpenAI({ apiKey });
+    const started = Date.now();
+    const buffer = Buffer.from(image.split(",")[1], "base64");
+
+    // ---- Step 1: Analyze the layout (graceful) ----
+    let layout = null;
+    try {
+      const a = await client.chat.completions.create({
+        model: VISION_MODEL,
+        messages: [{ role: "user", content: [
+          { type: "text", text: ANALYZE_PROMPT },
+          { type: "image_url", image_url: { url: image } }
+        ] }]
+      });
+      layout = a.choices?.[0]?.message?.content?.trim() || null;
+    } catch (_) {
+      layout = null;
     }
 
-    // Upload the view to Higgsfield's CDN using the v1 client.
-    const uploader = new HiggsfieldClient({ apiKey, apiSecret });
-    const buffer = Buffer.from(image.split(",")[1], "base64");
-    const inputUrl = await uploader.uploadImage(buffer, format);
-
-    // Generate the styled render using the v2 client.
-    const client = createHiggsfieldClient({
-      credentials: apiKey + ":" + apiSecret,
-      pollInterval: 2000,
-      maxPollTime: 55000
-    });
-
+    // ---- Step 2: Compose the prompt ----
     const cabinetStone = STONES[cabinet] || STONES["taj"];
     const prompt = buildPrompt({
       stone: stone.desc,
       cabinet: cabinetStone.desc,
       glass: GLASS[glass] || GLASS.fluted,
-      lighting: LIGHTING[lighting] || LIGHTING.default
+      lighting: LIGHTING[lighting] || LIGHTING.default,
+      layout
     });
 
-    const jobSet = await client.subscribe(MODEL, {
-      input: {
-        prompt,
-        aspect_ratio: "16:9",
-        input_images: [{ type: "image_url", image_url: inputUrl }]
-      },
-      withPolling: true
+    // ---- Step 3: Edit (core) ----
+    const ext = format === "jpeg" ? "jpg" : format;
+    const imageFile = await toFile(buffer, "view." + ext, { type: "image/" + format });
+    const edit = await client.images.edit({
+      model: IMAGE_MODEL,
+      image: imageFile,
+      prompt,
+      size: IMAGE_SIZE,
+      quality: IMAGE_QUALITY,
+      output_format: "jpeg",
+      output_compression: 80
     });
 
-    if (jobSet.isNsfw) {
-      return res.status(422).json({ error: "The render was flagged by moderation. Please try a different view." });
-    }
-    if (!jobSet.isCompleted) {
-      return res.status(502).json({ error: "The render did not complete. Please try again." });
+    const b64 = edit.data?.[0]?.b64_json;
+    if (!b64) return res.status(502).json({ error: "The render returned no image. Please try again." });
+    const renderUrl = "data:image/jpeg;base64," + b64;
+
+    // ---- Step 4: Verify (graceful, time-budgeted) ----
+    let verify = "Layout check skipped to stay within time.";
+    if (Date.now() - started < 48000) {
+      try {
+        const v = await client.chat.completions.create({
+          model: VISION_MODEL,
+          messages: [{ role: "user", content: [
+            { type: "text", text: VERIFY_PROMPT },
+            { type: "image_url", image_url: { url: image } },
+            { type: "image_url", image_url: { url: renderUrl } }
+          ] }]
+        });
+        verify = v.choices?.[0]?.message?.content?.trim() || "Layout check returned no result.";
+      } catch (_) {
+        verify = "Layout check unavailable for this render.";
+      }
     }
 
-    const url = jobSet.jobs?.[0]?.results?.raw?.url;
-    if (!url) return res.status(502).json({ error: "The render finished but returned no image. Please try again." });
-
-    return res.status(200).json({ url, finish: stone.name });
+    return res.status(200).json({ url: renderUrl, verify, finish: stone.name });
   } catch (err) {
     const name = err && err.name ? err.name + ": " : "";
     return res.status(500).json({ error: name + (err && err.message ? err.message : "Unexpected render error.") });
