@@ -19,7 +19,7 @@ export const config = { maxDuration: 60 };
 
 const IMAGE_MODEL   = process.env.OPENAI_IMAGE_MODEL   || "gpt-image-2";
 const VISION_MODEL  = process.env.OPENAI_VISION_MODEL  || "gpt-4o";
-const IMAGE_SIZE    = process.env.OPENAI_IMAGE_SIZE    || "1536x864"; // 16:9 for Canva
+const IMAGE_SIZE    = process.env.OPENAI_IMAGE_SIZE    || "1536x1024"; // 3:2 to fit the proposal perspective slots
 const IMAGE_QUALITY = process.env.OPENAI_IMAGE_QUALITY || "high";
 
 // ---- Silverstone finishes (used for both countertop and cabinet) ----
@@ -40,7 +40,7 @@ const GLASS = {
 };
 
 const LIGHTING = {
-  default: "Integrated lighting, shown as real installed LED, warm and subtle and never theatrical: soft daylight from a ceiling sunroof above; under-counter LED beneath the countertop overhang; under-cabinet LED washing down onto the countertop and backsplash; a skirting LED at the plinth glowing softly onto the floor; and vertical LED strips inside the glass-fronted upper cabinets lighting the shelves. Realistic soft shadows and gentle reflections on the stone surfaces."
+  default: "Integrated lighting, shown as genuinely installed LED and styled like a high-end architectural render: warm 2700K to 3000K accents, layered and subtle, never theatrical. Soft, slightly cool daylight fills the room from a ceiling sunroof above, keeping the walls and upper cabinets bright and clean. Warm under-cabinet LED washes down the backsplash and across the countertop. Warm under-counter LED runs beneath the worktop front overhang and glows onto the cabinetry below. A warm skirting LED at the plinth casts a soft pool of light onto the floor along the full run of cabinets. Warm in-cabinet LED lights the interiors and shelves of the glass-fronted and open brass-framed cabinets so they glow from within. Balance the warm accents against the neutral daylight so the overall image reads bright, warm, and realistic, with soft shadows and gentle reflections on the polished stone."
 };
 
 const PROFILE = "slim brushed brass frames with a warm satin finish and soft highlights";
@@ -51,19 +51,23 @@ const ANALYZE_PROMPT =
 const VERIFY_PROMPT =
   "The first image is an original kitchen design view. The second image is a restyled photorealistic render meant to keep the same layout. In one short sentence, state whether the render preserves the same layout, cabinet positions, island, appliances, window, and camera angle. Begin with 'Layout preserved' if it matches well, or 'Possible drift' followed by what differs, if there are notable structural changes.";
 
-function buildPrompt({ stone, cabinet, glass, lighting, layout }) {
+function buildPrompt({ stone, cabinet, glass, lighting, layout, imageNote }) {
   const layoutLine = layout ? "The existing kitchen layout, to preserve exactly: " + layout + "\n\n" : "";
+  const noteLine = imageNote ? imageNote + "\n\n" : "";
   return [
-    "You are given a photo of a kitchen design view. Re-render it as a photorealistic, photographic image of the same kitchen, fully installed and finished.",
+    noteLine + "Re-render the kitchen design view as a photorealistic, photographic image of the same kitchen, fully installed and finished.",
     layoutLine + "Preserve the layout exactly: keep every cabinet and shutter position, the island and appliance placement, window positions, proportions, and the camera angle identical to the input. Do not move, add, or remove any cabinetry. Change only the surface materials and finishes listed below.",
     "",
     "Surfaces to apply:",
     "- Countertop and backsplash: " + stone + ".",
-    "- Cabinet shutters, clad in " + cabinet + ".",
+    "- Cabinet shutters, surfaced in " + cabinet + ".",
     "- Upper glass shutters: " + glass + ", framed in " + PROFILE + ".",
+    "",
+    "Texture mapping: map every stone surface as large-format, book-matched polished slabs. The veining must be large in scale and flow continuously across each surface and across adjacent panels, as if cut from a single slab, and it must run continuously from the countertop up into the backsplash. Never render the stone as small, busy, repeating, or visibly tiled texture. Keep the stone scale and character consistent across every surface it covers, so the countertop, backsplash, and stone-surfaced cabinet fronts read as one cohesive material. Reproduce the colour, vein colour and density, pattern, and polish of each selected finish faithfully.",
     "",
     lighting,
     "",
+    "Render it to the quality of a high-end architectural visualisation photograph: polished engineered-stone surfaces with soft, believable reflections; slim brushed-brass bar-pull handles and shelf frames with gentle metallic highlights; realistic soft shadows and contact shadows; a warm, inviting overall colour grade; and balanced exposure with no blown highlights or crushed shadows.",
     "Accurate to a real, buildable Magppie kitchen. No exaggerated glow, no impossible reflections, no fantasy elements, no people, no text, no watermarks, no logos."
   ].join("\n");
 }
@@ -76,6 +80,17 @@ function mimeToFormat(dataUrl) {
   return t;
 }
 
+async function dataUrlToFile(dataUrl, name) {
+  const f = mimeToFormat(dataUrl);
+  if (!f) return null;
+  const buf = Buffer.from(dataUrl.split(",")[1], "base64");
+  const ext = f === "jpeg" ? "jpg" : f;
+  return toFile(buf, name + "." + ext, { type: "image/" + f });
+}
+
+const ORD = ["", "first", "second", "third", "fourth", "fifth"];
+const ordinal = (n) => ORD[n] || (n + "th");
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -83,7 +98,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { image, countertop, cabinet, glass, lighting } = req.body || {};
+    const { image, countertop, cabinet, glass, lighting, countertopSwatch, cabinetSwatch } = req.body || {};
 
     const stone = STONES[countertop];
     if (!stone) return res.status(400).json({ error: "Pick a countertop finish before rendering." });
@@ -99,39 +114,64 @@ export default async function handler(req, res) {
 
     const client = new OpenAI({ apiKey });
     const started = Date.now();
-    const buffer = Buffer.from(image.split(",")[1], "base64");
+    const visionOn = VISION_MODEL && VISION_MODEL.toLowerCase() !== "none" && VISION_MODEL.toLowerCase() !== "off";
+    const verifyOn = visionOn && (process.env.OPENAI_VERIFY || "on").toLowerCase() !== "off";
 
-    // ---- Step 1: Analyze the layout (graceful) ----
+    // ---- Step 1: Analyze the layout (graceful, skipped when vision is off) ----
     let layout = null;
-    try {
-      const a = await client.chat.completions.create({
-        model: VISION_MODEL,
-        messages: [{ role: "user", content: [
-          { type: "text", text: ANALYZE_PROMPT },
-          { type: "image_url", image_url: { url: image } }
-        ] }]
-      });
-      layout = a.choices?.[0]?.message?.content?.trim() || null;
-    } catch (_) {
-      layout = null;
+    if (visionOn) {
+      try {
+        const a = await client.chat.completions.create({
+          model: VISION_MODEL,
+          messages: [{ role: "user", content: [
+            { type: "text", text: ANALYZE_PROMPT },
+            { type: "image_url", image_url: { url: image } }
+          ] }]
+        });
+        layout = a.choices?.[0]?.message?.content?.trim() || null;
+      } catch (_) {
+        layout = null;
+      }
     }
 
-    // ---- Step 2: Compose the prompt ----
+    // ---- Step 2: Assemble images (kitchen + stone swatch references) ----
+    const kitchenFile = await dataUrlToFile(image, "view");
+    const images = [kitchenFile];
+    const roleLines = ["The first image is the kitchen design view to restyle; preserve its layout, cabinet positions, island, appliances, window, and camera angle exactly."];
+
+    const useSwatches = (process.env.USE_SWATCH_REFERENCES || "on") !== "off";
+    const sameStone = !!(cabinet && cabinet === countertop);
+
+    if (useSwatches && typeof countertopSwatch === "string") {
+      const cf = await dataUrlToFile(countertopSwatch, "counter");
+      if (cf) {
+        images.push(cf);
+        roleLines.push("The " + ordinal(images.length) + " image is the exact stone for the countertop and backsplash; reproduce its colour, veining, scale, and finish faithfully on those surfaces" + (sameStone ? ", and use the same stone on the cabinet shutters" : "") + ".");
+      }
+    }
+    if (useSwatches && !sameStone && typeof cabinetSwatch === "string") {
+      const bf = await dataUrlToFile(cabinetSwatch, "cabinet");
+      if (bf) {
+        images.push(bf);
+        roleLines.push("The " + ordinal(images.length) + " image is the exact stone for the cabinet shutters; reproduce it faithfully on the cabinet fronts.");
+      }
+    }
+
+    // ---- Step 3: Compose the prompt ----
     const cabinetStone = STONES[cabinet] || STONES["taj"];
     const prompt = buildPrompt({
       stone: stone.desc,
       cabinet: cabinetStone.desc,
       glass: GLASS[glass] || GLASS.fluted,
       lighting: LIGHTING[lighting] || LIGHTING.default,
-      layout
+      layout,
+      imageNote: roleLines.join(" ")
     });
 
-    // ---- Step 3: Edit (core) ----
-    const ext = format === "jpeg" ? "jpg" : format;
-    const imageFile = await toFile(buffer, "view." + ext, { type: "image/" + format });
+    // ---- Step 4: Edit (core) ----
     const edit = await client.images.edit({
       model: IMAGE_MODEL,
-      image: imageFile,
+      image: images.length === 1 ? images[0] : images,
       prompt,
       size: IMAGE_SIZE,
       quality: IMAGE_QUALITY,
@@ -143,9 +183,9 @@ export default async function handler(req, res) {
     if (!b64) return res.status(502).json({ error: "The render returned no image. Please try again." });
     const renderUrl = "data:image/jpeg;base64," + b64;
 
-    // ---- Step 4: Verify (graceful, time-budgeted) ----
+    // ---- Step 5: Verify (graceful, time-budgeted, skipped when vision is off) ----
     let verify = "Layout check skipped to stay within time.";
-    if (Date.now() - started < 48000) {
+    if (verifyOn && Date.now() - started < 48000) {
       try {
         const v = await client.chat.completions.create({
           model: VISION_MODEL,
