@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Magppie Sales Caller — AI Lead Generation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green: #1B3A2D;
+    --sand: #C8BFB0;
+    --cream: #F7F4F0;
+    --ink: #2B2B2B;
+    --paper: #FFFFFF;
+    --line: #E4DED4;
+    --sand-soft: #EFEAE2;
+    --green-soft: #2C5440;
+    --shadow: 0 1px 2px rgba(43,43,43,0.04), 0 8px 30px rgba(27,58,45,0.06);
+    --blue: #2B5EA7;
+    --blue-soft: #EBF0F7;
+    --amber: #8A5A2B;
+    --amber-soft: #FBF3EC;
+    --red: #8A3333;
+    --red-soft: #FBECEC;
+    --success: #2D6A4F;
+    --success-soft: #EEF3EF;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    background: var(--cream); color: var(--ink);
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+  }
+
+  /* Header */
+  .site-head { border-bottom: 1px solid var(--line); background: var(--cream); position: sticky; top: 0; z-index: 20; }
+  .site-head .wrap { display: flex; align-items: center; gap: 16px; padding: 18px 40px; max-width: 1400px; margin: 0 auto; }
+  .wordmark { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 27px; letter-spacing: .5px; color: var(--green); line-height: 1; text-decoration: none; }
+  .eyebrow { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--sand); font-weight: 500; }
+  .head-nav { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .head-nav a { font-size: 13px; color: var(--green); text-decoration: none; padding: 8px 14px; border-radius: 3px; transition: background .15s; }
+  .head-nav a:hover { background: var(--sand-soft); }
+  .head-nav a.active { background: var(--green); color: #fff; }
+
+  /* Layout */
+  .app { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+  .app-grid { display: grid; grid-template-columns: 280px 1fr; gap: 0; min-height: calc(100vh - 62px); }
+
+  /* Sidebar */
+  .sidebar { border-right: 1px solid var(--line); padding: 28px 24px; background: var(--paper); }
+  .sidebar-section { margin-bottom: 32px; }
+  .sidebar-title { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--green); font-weight: 500; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .sidebar-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { background: var(--cream); border-radius: 4px; padding: 14px; text-align: center; }
+  .stat-val { font-family: "Cormorant Garamond", serif; font-size: 32px; font-weight: 600; color: var(--green); line-height: 1; }
+  .stat-label { font-size: 11px; color: #8A887F; margin-top: 4px; letter-spacing: .02em; }
+
+  .filter-list { list-style: none; }
+  .filter-list li { font-size: 13.5px; padding: 9px 12px; border-radius: 3px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background .12s; }
+  .filter-list li:hover { background: var(--sand-soft); }
+  .filter-list li.active { background: var(--green); color: #fff; }
+  .filter-list li .count { margin-left: auto; font-size: 12px; opacity: .6; min-width: 20px; text-align: right; }
+  .filter-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-new { background: var(--blue); }
+  .dot-contacted { background: var(--amber); }
+  .dot-interested { background: var(--success); }
+  .dot-proposal { background: #7B61FF; }
+  .dot-converted { background: var(--green); }
+  .dot-lost { background: var(--red); }
+
+  /* Main content */
+  .main { padding: 28px 32px; overflow-y: auto; }
+
+  .page-head { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .page-head h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 32px; color: var(--green); line-height: 1.1; }
+  .page-head .actions { margin-left: auto; display: flex; gap: 10px; }
+
+  /* Buttons */
+  .btn { font-family: "DM Sans", sans-serif; font-size: 13px; letter-spacing: .03em; border: none; border-radius: 3px; padding: 10px 20px; cursor: pointer; transition: background .15s, opacity .15s; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-primary { background: var(--green); color: #fff; }
+  .btn-primary:hover { background: var(--green-soft); }
+  .btn-ghost { background: transparent; color: var(--green); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: var(--sand-soft); border-color: var(--sand); }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn svg { width: 15px; height: 15px; }
+
+  /* Leads table */
+  .leads-table { width: 100%; border-collapse: collapse; }
+  .leads-table th { font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--green); font-weight: 500; text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+  .leads-table td { font-size: 13.5px; padding: 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .leads-table tr:hover td { background: var(--sand-soft); }
+  .leads-table tr { cursor: pointer; }
+  .lead-name { font-weight: 500; color: var(--green); }
+  .lead-company { font-size: 12px; color: #8A887F; margin-top: 2px; }
+
+  .status-badge { font-size: 11px; letter-spacing: .05em; padding: 4px 10px; border-radius: 12px; font-weight: 500; text-transform: capitalize; white-space: nowrap; }
+  .status-new { background: var(--blue-soft); color: var(--blue); }
+  .status-contacted { background: var(--amber-soft); color: var(--amber); }
+  .status-interested { background: var(--success-soft); color: var(--success); }
+  .status-proposal_sent { background: #F0ECF9; color: #7B61FF; }
+  .status-converted { background: var(--success-soft); color: var(--green); }
+  .status-lost { background: var(--red-soft); color: var(--red); }
+
+  .source-tag { font-size: 11px; color: #8A887F; background: var(--cream); padding: 3px 8px; border-radius: 3px; }
+  .table-actions { display: flex; gap: 6px; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 80px 24px; }
+  .empty-state .icon { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--sand); display: grid; place-items: center; margin: 0 auto 20px; color: var(--green); }
+  .empty-state .icon svg { width: 24px; height: 24px; }
+  .empty-state h2 { font-family: "Cormorant Garamond", serif; font-size: 24px; color: var(--green); font-weight: 500; }
+  .empty-state p { color: #8A887F; font-size: 14px; margin-top: 8px; max-width: 400px; margin-left: auto; margin-right: auto; }
+  .empty-state .btn { margin-top: 20px; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(27,58,45,0.3); z-index: 100; display: none; place-items: center; backdrop-filter: blur(2px); }
+  .modal-overlay.open { display: grid; }
+  .modal { background: var(--paper); border-radius: 6px; box-shadow: 0 16px 60px rgba(27,58,45,0.15); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+  .modal-head { padding: 22px 28px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 14px; }
+  .modal-head h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 24px; color: var(--green); flex: 1; }
+  .modal-close { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: none; cursor: pointer; display: grid; place-items: center; color: var(--ink); transition: background .12s; }
+  .modal-close:hover { background: var(--sand-soft); }
+  .modal-body { padding: 24px 28px; }
+  .modal-foot { padding: 16px 28px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* Forms */
+  .form-row { margin-bottom: 18px; }
+  .form-row label { display: block; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--green); font-weight: 500; margin-bottom: 6px; }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 11px 14px;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus { outline: none; border-color: var(--green); }
+  .form-row textarea { resize: vertical; min-height: 80px; }
+  .form-row select { cursor: pointer; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232B2B2B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; background-size: 12px; padding-right: 38px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-row input::placeholder, .form-row textarea::placeholder { color: #B4B1A6; }
+
+  /* Lead detail panel */
+  .detail-panel { position: fixed; right: 0; top: 62px; bottom: 0; width: 520px; background: var(--paper); border-left: 1px solid var(--line); z-index: 50; transform: translateX(100%); transition: transform .25s ease; overflow-y: auto; box-shadow: -8px 0 40px rgba(27,58,45,0.08); }
+  .detail-panel.open { transform: translateX(0); }
+  .detail-head { padding: 24px 28px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; gap: 14px; }
+  .detail-head h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 26px; color: var(--green); flex: 1; line-height: 1.2; }
+  .detail-head .lead-company { margin-top: 4px; }
+  .detail-body { padding: 24px 28px; }
+  .detail-section { margin-bottom: 28px; }
+  .detail-section-title { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--green); font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .detail-section-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .detail-field { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--cream); }
+  .detail-field .df-label { font-size: 12px; color: #8A887F; width: 100px; flex-shrink: 0; }
+  .detail-field .df-value { font-size: 13.5px; color: var(--ink); flex: 1; }
+
+  /* AI Script panel */
+  .ai-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .ai-btn { font-family: "DM Sans", sans-serif; font-size: 12px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper); color: var(--ink); cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .ai-btn:hover { border-color: var(--green); color: var(--green); background: var(--success-soft); }
+  .ai-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+  .ai-btn svg { width: 14px; height: 14px; }
+
+  .script-output { background: var(--cream); border: 1px solid var(--line); border-radius: 4px; padding: 20px; font-size: 13.5px; line-height: 1.7; min-height: 120px; white-space: pre-wrap; position: relative; }
+  .script-output.loading { color: #8A887F; }
+  .script-output h1, .script-output h2, .script-output h3 { font-family: "Cormorant Garamond", serif; color: var(--green); margin: 16px 0 8px; font-weight: 500; }
+  .script-output h1 { font-size: 20px; }
+  .script-output h2 { font-size: 18px; }
+  .script-output h3 { font-size: 16px; }
+  .script-output ul, .script-output ol { margin-left: 20px; margin-bottom: 10px; }
+  .script-output li { margin-bottom: 4px; }
+  .script-output strong { color: var(--green); }
+  .script-output p { margin-bottom: 10px; }
+
+  .shimmer-bar { height: 14px; background: linear-gradient(100deg, var(--sand-soft) 30%, #fbfaf7 50%, var(--sand-soft) 70%); background-size: 220% 100%; animation: sweep 1.9s ease-in-out infinite; border-radius: 3px; margin-bottom: 10px; }
+  .shimmer-bar:nth-child(2) { width: 85%; }
+  .shimmer-bar:nth-child(3) { width: 70%; }
+  .shimmer-bar:nth-child(4) { width: 90%; }
+  @keyframes sweep { 0% { background-position: 180% 0; } 100% { background-position: -80% 0; } }
+
+  /* Call log */
+  .call-entry { background: var(--cream); border-radius: 4px; padding: 14px; margin-bottom: 10px; }
+  .call-entry-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .call-date { font-size: 12px; color: #8A887F; }
+  .call-outcome { font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 500; }
+  .call-outcome.positive { background: var(--success-soft); color: var(--success); }
+  .call-outcome.neutral { background: var(--blue-soft); color: var(--blue); }
+  .call-outcome.negative { background: var(--red-soft); color: var(--red); }
+  .call-notes { font-size: 13px; color: var(--ink); }
+  .call-duration { font-size: 12px; color: #8A887F; margin-left: auto; }
+
+  /* Search bar */
+  .search-bar { position: relative; margin-bottom: 20px; }
+  .search-bar input { width: 100%; padding: 11px 14px 11px 38px; font-family: "DM Sans", sans-serif; font-size: 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); }
+  .search-bar input:focus { outline: none; border-color: var(--green); }
+  .search-bar input::placeholder { color: #B4B1A6; }
+  .search-bar svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #B4B1A6; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 28px; right: 28px; background: var(--green); color: #fff; padding: 14px 22px; border-radius: 4px; font-size: 13.5px; z-index: 200; transform: translateY(80px); opacity: 0; transition: all .3s ease; box-shadow: 0 8px 30px rgba(27,58,45,0.2); }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Pipeline view */
+  .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .pipeline-col { background: var(--paper); border: 1px solid var(--line); border-radius: 4px; min-height: 300px; }
+  .pipeline-col-head { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+  .pipeline-col-head h3 { font-size: 13px; font-weight: 500; flex: 1; }
+  .pipeline-col-head .count { font-size: 12px; color: #8A887F; }
+  .pipeline-col-body { padding: 10px; }
+  .pipeline-card { background: var(--cream); border: 1px solid var(--line); border-radius: 4px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s; }
+  .pipeline-card:hover { border-color: var(--green); }
+  .pipeline-card .pc-name { font-weight: 500; font-size: 13.5px; color: var(--green); }
+  .pipeline-card .pc-company { font-size: 12px; color: #8A887F; margin-top: 2px; }
+  .pipeline-card .pc-interest { font-size: 11px; color: #8A887F; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
+
+  /* View toggle */
+  .view-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .view-toggle .vt-btn { font-family: "DM Sans", sans-serif; font-size: 12px; padding: 8px 14px; background: var(--paper); border: none; cursor: pointer; color: #8A887F; transition: all .12s; display: inline-flex; align-items: center; gap: 6px; }
+  .view-toggle .vt-btn + .vt-btn { border-left: 1px solid var(--line); }
+  .view-toggle .vt-btn.active { background: var(--green); color: #fff; }
+  .view-toggle .vt-btn svg { width: 14px; height: 14px; }
+
+  @media (max-width: 1024px) {
+    .app-grid { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .detail-panel { width: 100%; }
+    .pipeline { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .pipeline { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .page-head { flex-direction: column; align-items: flex-start; }
+    .page-head .actions { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="wordmark" href="index.html">Magppie</a>
+    <span class="eyebrow">AI Sales Caller</span>
+    <nav class="head-nav">
+      <a href="index.html">Render Studio</a>
+      <a href="sales-caller.html" class="active">Sales Caller</a>
+    </nav>
+  </div>
+</header>
+
+<div class="app">
+  <div class="app-grid">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Dashboard</div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-val" id="stat-total">0</div><div class="stat-label">Total Leads</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-hot">0</div><div class="stat-label">Hot Leads</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-converted">0</div><div class="stat-label">Converted</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-rate">0%</div><div class="stat-label">Conv. Rate</div></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">Pipeline</div>
+        <ul class="filter-list" id="filterList">
+          <li class="active" data-filter="all"><span class="filter-dot" style="background:var(--green)"></span> All Leads <span class="count" id="count-all">0</span></li>
+          <li data-filter="new"><span class="filter-dot dot-new"></span> New <span class="count" id="count-new">0</span></li>
+          <li data-filter="contacted"><span class="filter-dot dot-contacted"></span> Contacted <span class="count" id="count-contacted">0</span></li>
+          <li data-filter="interested"><span class="filter-dot dot-interested"></span> Interested <span class="count" id="count-interested">0</span></li>
+          <li data-filter="proposal_sent"><span class="filter-dot dot-proposal"></span> Proposal Sent <span class="count" id="count-proposal_sent">0</span></li>
+          <li data-filter="converted"><span class="filter-dot dot-converted"></span> Converted <span class="count" id="count-converted">0</span></li>
+          <li data-filter="lost"><span class="filter-dot dot-lost"></span> Lost <span class="count" id="count-lost">0</span></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">Quick Actions</div>
+        <ul class="filter-list">
+          <li id="btnImportCSV"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg> Import CSV</li>
+          <li id="btnExportCSV"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 12v6"/><path d="m15 15-3 3-3-3"/></svg> Export Leads</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main">
+      <div class="page-head">
+        <h1>Leads</h1>
+        <div class="actions">
+          <div class="view-toggle" id="viewToggle">
+            <button class="vt-btn active" data-view="table"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h18"/></svg> List</button>
+            <button class="vt-btn" data-view="pipeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="8" width="5" height="13" rx="1"/><rect x="17" y="5" width="5" height="16" rx="1"/></svg> Pipeline</button>
+          </div>
+          <button class="btn btn-primary" id="btnAddLead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add Lead</button>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" placeholder="Search leads by name, company, or interest..." />
+      </div>
+
+      <!-- Table View -->
+      <div id="tableView">
+        <table class="leads-table" id="leadsTable">
+          <thead>
+            <tr>
+              <th>Lead</th>
+              <th>Status</th>
+              <th>Source</th>
+              <th>Interest</th>
+              <th>Follow-up</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="leadsBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <h2>No leads yet</h2>
+          <p>Add your first lead to start generating AI-powered sales scripts and tracking your pipeline.</p>
+          <button class="btn btn-primary" onclick="openAddModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M12 5v14M5 12h14"/></svg> Add your first lead</button>
+        </div>
+      </div>
+
+      <!-- Pipeline View -->
+      <div id="pipelineView" style="display:none">
+        <div class="pipeline" id="pipelineGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Lead Modal -->
+<div class="modal-overlay" id="leadModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Add New Lead</h2>
+      <button class="modal-close" onclick="closeModal('leadModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row"><label for="f-name">Name *</label><input id="f-name" type="text" placeholder="e.g. Rahul Sharma" /></div>
+        <div class="form-row"><label for="f-company">Company / Role</label><input id="f-company" type="text" placeholder="e.g. Architect, ABC Interiors" /></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label for="f-phone">Phone</label><input id="f-phone" type="tel" placeholder="+91 98XXX XXXXX" /></div>
+        <div class="form-row"><label for="f-email">Email</label><input id="f-email" type="email" placeholder="rahul@example.com" /></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="f-source">Source</label>
+          <select id="f-source">
+            <option value="">Select source</option>
+            <option value="referral">Referral</option>
+            <option value="website">Website</option>
+            <option value="trade-show">Trade Show</option>
+            <option value="social-media">Social Media</option>
+            <option value="walk-in">Walk-in</option>
+            <option value="cold-outreach">Cold Outreach</option>
+            <option value="partner">Partner/Dealer</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="f-status">Status</label>
+          <select id="f-status">
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="interested">Interested</option>
+            <option value="proposal_sent">Proposal Sent</option>
+            <option value="converted">Converted</option>
+            <option value="lost">Lost</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="f-budget">Budget Range</label>
+          <select id="f-budget">
+            <option value="">Select range</option>
+            <option value="10-25L">10 - 25 Lakhs</option>
+            <option value="25-50L">25 - 50 Lakhs</option>
+            <option value="50L-1Cr">50 Lakhs - 1 Crore</option>
+            <option value="1Cr+">1 Crore+</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="f-timeline">Timeline</label>
+          <select id="f-timeline">
+            <option value="">Select timeline</option>
+            <option value="immediate">Immediate (< 1 month)</option>
+            <option value="1-3months">1 - 3 months</option>
+            <option value="3-6months">3 - 6 months</option>
+            <option value="6months+">6+ months</option>
+            <option value="exploring">Just exploring</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row"><label for="f-interest">Interest / Requirements</label><input id="f-interest" type="text" placeholder="e.g. Modular kitchen for new villa, interested in Statuario Gold" /></div>
+      <div class="form-row"><label for="f-followup">Next Follow-up</label><input id="f-followup" type="date" /></div>
+      <div class="form-row"><label for="f-notes">Notes</label><textarea id="f-notes" placeholder="Any additional notes about this lead..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('leadModal')">Cancel</button>
+      <button class="btn btn-primary" id="btnSaveLead">Save Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log Call Modal -->
+<div class="modal-overlay" id="callModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Log Call</h2>
+      <button class="modal-close" onclick="closeModal('callModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="c-outcome">Outcome</label>
+          <select id="c-outcome">
+            <option value="positive">Positive - Interested</option>
+            <option value="neutral">Neutral - Need follow-up</option>
+            <option value="negative">Negative - Not interested</option>
+            <option value="no-answer">No Answer</option>
+            <option value="callback">Requested Callback</option>
+          </select>
+        </div>
+        <div class="form-row"><label for="c-duration">Duration (min)</label><input id="c-duration" type="number" placeholder="5" min="0" /></div>
+      </div>
+      <div class="form-row"><label for="c-notes">Call Notes</label><textarea id="c-notes" placeholder="Key points discussed, next steps agreed, objections raised..."></textarea></div>
+      <div class="form-row"><label for="c-followup">Schedule Follow-up</label><input id="c-followup" type="date" /></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('callModal')">Cancel</button>
+      <button class="btn btn-primary" id="btnSaveCall">Save Call</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lead Detail Panel -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-head">
+    <div>
+      <h2 id="detail-name"></h2>
+      <div class="lead-company" id="detail-company"></div>
+    </div>
+    <button class="modal-close" onclick="closeDetail()">&times;</button>
+  </div>
+  <div class="detail-body">
+    <div class="detail-section">
+      <div class="detail-section-title">Contact Info</div>
+      <div class="detail-field"><span class="df-label">Phone</span><span class="df-value" id="detail-phone"></span></div>
+      <div class="detail-field"><span class="df-label">Email</span><span class="df-value" id="detail-email"></span></div>
+      <div class="detail-field"><span class="df-label">Source</span><span class="df-value" id="detail-source"></span></div>
+      <div class="detail-field"><span class="df-label">Status</span><span class="df-value" id="detail-status"></span></div>
+      <div class="detail-field"><span class="df-label">Budget</span><span class="df-value" id="detail-budget"></span></div>
+      <div class="detail-field"><span class="df-label">Timeline</span><span class="df-value" id="detail-timeline"></span></div>
+      <div class="detail-field"><span class="df-label">Interest</span><span class="df-value" id="detail-interest"></span></div>
+      <div class="detail-field"><span class="df-label">Follow-up</span><span class="df-value" id="detail-followup"></span></div>
+      <div class="detail-field"><span class="df-label">Notes</span><span class="df-value" id="detail-notes"></span></div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">AI Sales Assistant</div>
+      <div class="ai-actions" id="aiActions">
+        <button class="ai-btn" data-action="cold-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Call Script</button>
+        <button class="ai-btn" data-action="follow-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Follow-up</button>
+        <button class="ai-btn" data-action="email-draft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="m22 6-10 7L2 6"/></svg> Email Draft</button>
+        <button class="ai-btn" data-action="whatsapp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> WhatsApp</button>
+        <button class="ai-btn" data-action="objection-handling"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Objections</button>
+        <button class="ai-btn" data-action="brief"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg> Full Brief</button>
+      </div>
+      <div class="script-output" id="scriptOutput">
+        Select an action above to generate an AI-powered sales script for this lead.
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Call History</div>
+      <div id="callHistory"></div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px" id="btnLogCall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 5v14M5 12h14"/></svg> Log a call</button>
+    </div>
+
+    <div class="detail-section" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" id="btnEditLead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit Lead</button>
+      <button class="btn btn-ghost btn-sm" id="btnDeleteLead" style="color:var(--red);border-color:var(--red-soft)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV Import Modal -->
+<div class="modal-overlay" id="csvModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Import Leads from CSV</h2>
+      <button class="modal-close" onclick="closeModal('csvModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13.5px;color:#6B6A64;margin-bottom:16px">Upload a CSV file with columns: <strong>name, company, phone, email, source, interest, budget, timeline, notes</strong>. Only <em>name</em> is required.</p>
+      <div class="form-row"><label for="csv-file">CSV File</label><input id="csv-file" type="file" accept=".csv" /></div>
+      <div id="csvPreview" style="font-size:12px;color:#8A887F;margin-top:8px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('csvModal')">Cancel</button>
+      <button class="btn btn-primary" id="btnDoImport" disabled>Import</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="csvFileInput" accept=".csv" hidden />
+
+<script>
+const STORAGE_KEY = "magppie_leads";
+const STATUS_LABELS = { new: "New", contacted: "Contacted", interested: "Interested", proposal_sent: "Proposal Sent", converted: "Converted", lost: "Lost" };
+const PIPELINE_ORDER = ["new", "contacted", "interested", "proposal_sent", "converted"];
+
+let leads = [];
+let currentFilter = "all";
+let currentView = "table";
+let activeLeadId = null;
+let editingLeadId = null;
+
+function loadLeads() {
+  try { leads = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { leads = []; }
+}
+function saveLeads() { localStorage.setItem(STORAGE_KEY, JSON.stringify(leads)); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+function openAddModal() {
+  editingLeadId = null;
+  document.getElementById("modalTitle").textContent = "Add New Lead";
+  ["f-name","f-company","f-phone","f-email","f-interest","f-notes"].forEach(id => document.getElementById(id).value = "");
+  ["f-source","f-status","f-budget","f-timeline"].forEach(id => document.getElementById(id).selectedIndex = 0);
+  document.getElementById("f-followup").value = "";
+  document.getElementById("f-status").value = "new";
+  openModal("leadModal");
+}
+
+function openEditModal(lead) {
+  editingLeadId = lead.id;
+  document.getElementById("modalTitle").textContent = "Edit Lead";
+  document.getElementById("f-name").value = lead.name || "";
+  document.getElementById("f-company").value = lead.company || "";
+  document.getElementById("f-phone").value = lead.phone || "";
+  document.getElementById("f-email").value = lead.email || "";
+  document.getElementById("f-source").value = lead.source || "";
+  document.getElementById("f-status").value = lead.status || "new";
+  document.getElementById("f-budget").value = lead.budget || "";
+  document.getElementById("f-timeline").value = lead.timeline || "";
+  document.getElementById("f-interest").value = lead.interest || "";
+  document.getElementById("f-followup").value = lead.followUp || "";
+  document.getElementById("f-notes").value = lead.notes || "";
+  openModal("leadModal");
+}
+
+function saveLead() {
+  const name = document.getElementById("f-name").value.trim();
+  if (!name) { toast("Name is required"); return; }
+
+  const data = {
+    name,
+    company: document.getElementById("f-company").value.trim(),
+    phone: document.getElementById("f-phone").value.trim(),
+    email: document.getElementById("f-email").value.trim(),
+    source: document.getElementById("f-source").value,
+    status: document.getElementById("f-status").value || "new",
+    budget: document.getElementById("f-budget").value,
+    timeline: document.getElementById("f-timeline").value,
+    interest: document.getElementById("f-interest").value.trim(),
+    followUp: document.getElementById("f-followup").value,
+    notes: document.getElementById("f-notes").value.trim()
+  };
+
+  if (editingLeadId) {
+    const idx = leads.findIndex(l => l.id === editingLeadId);
+    if (idx !== -1) { leads[idx] = { ...leads[idx], ...data, updatedAt: new Date().toISOString() }; }
+    toast("Lead updated");
+  } else {
+    data.id = genId();
+    data.calls = [];
+    data.createdAt = new Date().toISOString();
+    data.updatedAt = new Date().toISOString();
+    leads.unshift(data);
+    toast("Lead added");
+  }
+
+  saveLeads();
+  closeModal("leadModal");
+  render();
+  if (editingLeadId && activeLeadId === editingLeadId) openDetail(editingLeadId);
+}
+
+function deleteLead(id) {
+  if (!confirm("Delete this lead? This cannot be undone.")) return;
+  leads = leads.filter(l => l.id !== id);
+  saveLeads();
+  closeDetail();
+  render();
+  toast("Lead deleted");
+}
+
+function getFiltered() {
+  let filtered = currentFilter === "all" ? leads : leads.filter(l => l.status === currentFilter);
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  if (q) {
+    filtered = filtered.filter(l =>
+      (l.name || "").toLowerCase().includes(q) ||
+      (l.company || "").toLowerCase().includes(q) ||
+      (l.interest || "").toLowerCase().includes(q) ||
+      (l.email || "").toLowerCase().includes(q)
+    );
+  }
+  return filtered;
+}
+
+function render() {
+  updateStats();
+  if (currentView === "table") renderTable();
+  else renderPipeline();
+}
+
+function updateStats() {
+  document.getElementById("stat-total").textContent = leads.length;
+  document.getElementById("stat-hot").textContent = leads.filter(l => l.status === "interested" || l.status === "proposal_sent").length;
+  document.getElementById("stat-converted").textContent = leads.filter(l => l.status === "converted").length;
+  const conv = leads.length ? Math.round((leads.filter(l => l.status === "converted").length / leads.length) * 100) : 0;
+  document.getElementById("stat-rate").textContent = conv + "%";
+
+  document.getElementById("count-all").textContent = leads.length;
+  Object.keys(STATUS_LABELS).forEach(s => {
+    const el = document.getElementById("count-" + s);
+    if (el) el.textContent = leads.filter(l => l.status === s).length;
+  });
+}
+
+function renderTable() {
+  const filtered = getFiltered();
+  const tbody = document.getElementById("leadsBody");
+  const empty = document.getElementById("emptyState");
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = "";
+    empty.style.display = leads.length === 0 ? "block" : "block";
+    if (leads.length > 0) {
+      empty.querySelector("h2").textContent = "No matching leads";
+      empty.querySelector("p").textContent = "Try adjusting your filter or search.";
+    } else {
+      empty.querySelector("h2").textContent = "No leads yet";
+      empty.querySelector("p").textContent = "Add your first lead to start generating AI-powered sales scripts and tracking your pipeline.";
+    }
+    return;
+  }
+
+  empty.style.display = "none";
+  tbody.innerHTML = filtered.map(l => `
+    <tr onclick="openDetail('${l.id}')">
+      <td><div class="lead-name">${esc(l.name)}</div>${l.company ? '<div class="lead-company">' + esc(l.company) + '</div>' : ''}</td>
+      <td><span class="status-badge status-${l.status}">${STATUS_LABELS[l.status] || l.status}</span></td>
+      <td>${l.source ? '<span class="source-tag">' + esc(l.source) + '</span>' : '<span style="color:#B4B1A6">—</span>'}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.interest || "—")}</td>
+      <td style="font-size:13px;color:${isOverdue(l.followUp) ? 'var(--red)' : '#8A887F'}">${l.followUp ? formatDate(l.followUp) : '—'}</td>
+      <td>
+        <div class="table-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm" onclick="openDetail('${l.id}')" title="View"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="btn btn-ghost btn-sm" onclick="quickAI('${l.id}')" title="AI Script"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-2 3-2 5h-4c0-2-2-3.05-2-5a4 4 0 0 1 4-4z"/><path d="M10 17h4"/><path d="M10 20h4"/></svg></button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function renderPipeline() {
+  const grid = document.getElementById("pipelineGrid");
+  grid.innerHTML = PIPELINE_ORDER.map(status => {
+    const items = leads.filter(l => l.status === status);
+    return `
+      <div class="pipeline-col">
+        <div class="pipeline-col-head">
+          <span class="filter-dot dot-${status}"></span>
+          <h3>${STATUS_LABELS[status]}</h3>
+          <span class="count">${items.length}</span>
+        </div>
+        <div class="pipeline-col-body">
+          ${items.map(l => `
+            <div class="pipeline-card" onclick="openDetail('${l.id}')">
+              <div class="pc-name">${esc(l.name)}</div>
+              ${l.company ? '<div class="pc-company">' + esc(l.company) + '</div>' : ''}
+              ${l.interest ? '<div class="pc-interest">' + esc(l.interest) + '</div>' : ''}
+            </div>
+          `).join("") || '<div style="text-align:center;padding:20px;font-size:12px;color:#B4B1A6">No leads</div>'}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function openDetail(id) {
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+  activeLeadId = id;
+
+  document.getElementById("detail-name").textContent = lead.name;
+  document.getElementById("detail-company").textContent = lead.company || "—";
+  document.getElementById("detail-phone").textContent = lead.phone || "—";
+  document.getElementById("detail-email").textContent = lead.email || "—";
+  document.getElementById("detail-source").textContent = lead.source || "—";
+  document.getElementById("detail-status").innerHTML = '<span class="status-badge status-' + lead.status + '">' + (STATUS_LABELS[lead.status] || lead.status) + '</span>';
+  document.getElementById("detail-budget").textContent = lead.budget || "—";
+  document.getElementById("detail-timeline").textContent = lead.timeline || "—";
+  document.getElementById("detail-interest").textContent = lead.interest || "—";
+  document.getElementById("detail-followup").textContent = lead.followUp ? formatDate(lead.followUp) : "—";
+  document.getElementById("detail-notes").textContent = lead.notes || "—";
+
+  renderCallHistory(lead);
+  document.getElementById("scriptOutput").innerHTML = "Select an action above to generate an AI-powered sales script for this lead.";
+  document.querySelectorAll(".ai-btn").forEach(b => b.classList.remove("active"));
+
+  document.getElementById("detailPanel").classList.add("open");
+}
+
+function closeDetail() {
+  document.getElementById("detailPanel").classList.remove("open");
+  activeLeadId = null;
+}
+
+function renderCallHistory(lead) {
+  const el = document.getElementById("callHistory");
+  if (!lead.calls || lead.calls.length === 0) {
+    el.innerHTML = '<div style="font-size:13px;color:#B4B1A6;padding:8px 0">No calls logged yet.</div>';
+    return;
+  }
+  el.innerHTML = lead.calls.slice().reverse().map(c => `
+    <div class="call-entry">
+      <div class="call-entry-head">
+        <span class="call-date">${formatDate(c.date)}</span>
+        <span class="call-outcome ${c.outcome === 'positive' ? 'positive' : c.outcome === 'negative' ? 'negative' : 'neutral'}">${c.outcome || 'noted'}</span>
+        ${c.duration ? '<span class="call-duration">' + c.duration + ' min</span>' : ''}
+      </div>
+      ${c.notes ? '<div class="call-notes">' + esc(c.notes) + '</div>' : ''}
+    </div>
+  `).join("");
+}
+
+function logCall() {
+  if (!activeLeadId) return;
+  document.getElementById("c-outcome").value = "neutral";
+  document.getElementById("c-duration").value = "";
+  document.getElementById("c-notes").value = "";
+  document.getElementById("c-followup").value = "";
+  openModal("callModal");
+}
+
+function saveCall() {
+  const lead = leads.find(l => l.id === activeLeadId);
+  if (!lead) return;
+
+  const call = {
+    date: new Date().toISOString(),
+    outcome: document.getElementById("c-outcome").value,
+    duration: document.getElementById("c-duration").value ? parseInt(document.getElementById("c-duration").value) : null,
+    notes: document.getElementById("c-notes").value.trim()
+  };
+
+  if (!lead.calls) lead.calls = [];
+  lead.calls.push(call);
+
+  const followUp = document.getElementById("c-followup").value;
+  if (followUp) lead.followUp = followUp;
+
+  if (lead.status === "new") lead.status = "contacted";
+
+  lead.updatedAt = new Date().toISOString();
+  saveLeads();
+  closeModal("callModal");
+  render();
+  openDetail(activeLeadId);
+  toast("Call logged");
+}
+
+async function generateAI(action) {
+  if (!activeLeadId) return;
+  const lead = leads.find(l => l.id === activeLeadId);
+  if (!lead) return;
+
+  document.querySelectorAll(".ai-btn").forEach(b => b.classList.toggle("active", b.dataset.action === action));
+
+  const output = document.getElementById("scriptOutput");
+  output.classList.add("loading");
+  output.innerHTML = '<div class="shimmer-bar"></div><div class="shimmer-bar"></div><div class="shimmer-bar"></div><div class="shimmer-bar"></div>';
+
+  const callHistory = lead.calls && lead.calls.length > 0
+    ? lead.calls.map(c => `${formatDate(c.date)}: ${c.outcome} - ${c.notes || 'no notes'} (${c.duration || '?'} min)`).join("\n")
+    : "No previous calls";
+
+  try {
+    const res = await fetch("/api/sales-caller", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        lead: { ...lead, callHistory },
+        action
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.script) throw new Error(data.error || "Failed to generate script");
+
+    output.classList.remove("loading");
+    output.innerHTML = renderMarkdown(data.script);
+  } catch (err) {
+    output.classList.remove("loading");
+    output.innerHTML = '<div style="color:var(--red)">' + esc(err.message) + '</div>';
+  }
+}
+
+function quickAI(id) {
+  openDetail(id);
+  setTimeout(() => generateAI("brief"), 300);
+}
+
+function renderMarkdown(text) {
+  return text
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+function exportCSV() {
+  if (leads.length === 0) { toast("No leads to export"); return; }
+  const headers = ["Name","Company","Phone","Email","Source","Status","Budget","Timeline","Interest","Follow-up","Notes","Created"];
+  const rows = leads.map(l => [l.name, l.company, l.phone, l.email, l.source, l.status, l.budget, l.timeline, l.interest, l.followUp, l.notes, l.createdAt].map(v => '"' + (v || "").replace(/"/g, '""') + '"'));
+  const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "magppie-leads-" + new Date().toISOString().split("T")[0] + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  toast("Leads exported");
+}
+
+function importCSV() { openModal("csvModal"); }
+
+let csvData = null;
+document.getElementById("csv-file").addEventListener("change", function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const text = ev.target.result;
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { document.getElementById("csvPreview").textContent = "No data rows found."; return; }
+    const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
+    csvData = [];
+    for (let i = 1; i < lines.length; i++) {
+      const vals = lines[i].match(/("([^"]|"")*"|[^,]*)/g) || [];
+      const row = {};
+      headers.forEach((h, idx) => { row[h] = (vals[idx] || "").replace(/^"|"$/g, "").replace(/""/g, '"').trim(); });
+      if (row.name) csvData.push(row);
+    }
+    document.getElementById("csvPreview").textContent = csvData.length + " leads found in file.";
+    document.getElementById("btnDoImport").disabled = csvData.length === 0;
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById("btnDoImport").addEventListener("click", function() {
+  if (!csvData || csvData.length === 0) return;
+  csvData.forEach(row => {
+    leads.unshift({
+      id: genId(),
+      name: row.name || "Unknown",
+      company: row.company || "",
+      phone: row.phone || "",
+      email: row.email || "",
+      source: row.source || "",
+      status: row.status && STATUS_LABELS[row.status] ? row.status : "new",
+      budget: row.budget || "",
+      timeline: row.timeline || "",
+      interest: row.interest || "",
+      followUp: row["follow-up"] || row.followup || "",
+      notes: row.notes || "",
+      calls: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  });
+  saveLeads();
+  closeModal("csvModal");
+  render();
+  toast(csvData.length + " leads imported");
+  csvData = null;
+});
+
+function esc(str) { const d = document.createElement("div"); d.textContent = str || ""; return d.innerHTML; }
+function formatDate(d) { if (!d) return "—"; try { return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }); } catch { return d; } }
+function isOverdue(d) { if (!d) return false; return new Date(d) < new Date(new Date().toDateString()); }
+
+// Event listeners
+document.getElementById("btnAddLead").addEventListener("click", openAddModal);
+document.getElementById("btnSaveLead").addEventListener("click", saveLead);
+document.getElementById("btnSaveCall").addEventListener("click", saveCall);
+document.getElementById("btnLogCall").addEventListener("click", logCall);
+document.getElementById("btnEditLead").addEventListener("click", () => { const l = leads.find(l => l.id === activeLeadId); if (l) openEditModal(l); });
+document.getElementById("btnDeleteLead").addEventListener("click", () => { if (activeLeadId) deleteLead(activeLeadId); });
+document.getElementById("btnExportCSV").addEventListener("click", exportCSV);
+document.getElementById("btnImportCSV").addEventListener("click", importCSV);
+document.getElementById("searchInput").addEventListener("input", render);
+
+document.querySelectorAll("#filterList li").forEach(li => {
+  li.addEventListener("click", () => {
+    document.querySelectorAll("#filterList li").forEach(l => l.classList.remove("active"));
+    li.classList.add("active");
+    currentFilter = li.dataset.filter;
+    render();
+  });
+});
+
+document.querySelectorAll("#viewToggle .vt-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#viewToggle .vt-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentView = btn.dataset.view;
+    document.getElementById("tableView").style.display = currentView === "table" ? "block" : "none";
+    document.getElementById("pipelineView").style.display = currentView === "pipeline" ? "block" : "none";
+    render();
+  });
+});
+
+document.querySelectorAll("#aiActions .ai-btn").forEach(btn => {
+  btn.addEventListener("click", () => generateAI(btn.dataset.action));
+});
+
+// Close detail panel on Escape
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    closeDetail();
+    closeModal("leadModal");
+    closeModal("callModal");
+    closeModal("csvModal");
+  }
+});
+
+// Load sample data if empty (for demo)
+function loadSampleData() {
+  if (leads.length > 0) return;
+  const samples = [
+    { name: "Rahul Mehra", company: "Mehra Constructions", phone: "+91 98765 43210", email: "rahul@mehracorp.in", source: "referral", status: "interested", budget: "50L-1Cr", timeline: "1-3months", interest: "L-shaped modular kitchen for penthouse, interested in Statuario Gold countertops", followUp: new Date(Date.now() + 2*86400000).toISOString().split("T")[0], notes: "Referred by arch. Priya Nair. Has seen our Whitefield showroom." },
+    { name: "Anita Desai", company: "Interior Dreams Studio", phone: "+91 99887 76655", email: "anita@interiordreams.co", source: "trade-show", status: "contacted", budget: "25-50L", timeline: "3-6months", interest: "Multiple kitchen projects for a luxury villa community, needs bulk pricing", followUp: new Date(Date.now() + 5*86400000).toISOString().split("T")[0], notes: "Met at Design Expo 2026. Handles 8-10 projects per year." },
+    { name: "Vikram Singh", company: "Homeowner", phone: "+91 87654 32109", email: "vikram.s@gmail.com", source: "website", status: "new", budget: "25-50L", timeline: "immediate", interest: "Kitchen renovation, modern Italian style, Bianco Lasa finish", notes: "Filled form on website. Wants a call back." },
+    { name: "Priya Kapoor", company: "Kapoor Architects", phone: "+91 77665 54433", email: "priya@kapoorarch.com", source: "partner", status: "proposal_sent", budget: "1Cr+", timeline: "1-3months", interest: "5 kitchens for luxury apartment project in Gurgaon, Onyx Gold and Cosmic finishes", followUp: new Date(Date.now() - 1*86400000).toISOString().split("T")[0], notes: "Proposal sent on 20th. Waiting for client approval." },
+    { name: "Deepak Joshi", company: "Joshi & Associates", phone: "+91 88776 65544", email: "deepak@joshiassoc.in", source: "social-media", status: "new", budget: "10-25L", timeline: "exploring", interest: "Compact kitchen for city apartment, open to suggestions on finishes", notes: "Saw our Instagram reels. First-time inquiry." },
+    { name: "Sunita Reddy", company: "Reddy Developers", phone: "+91 99001 12233", email: "sunita@reddydev.com", source: "cold-outreach", status: "converted", budget: "1Cr+", timeline: "immediate", interest: "15 kitchens for premium township, Taj and Trevi finishes", notes: "Converted after Render Studio demo. Order placed." }
+  ];
+  samples.forEach(s => {
+    leads.push({ ...s, id: genId(), calls: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+  });
+  saveLeads();
+}
+
+loadLeads();
+loadSampleData();
+render();
+</script>
+</body>
+</html>
