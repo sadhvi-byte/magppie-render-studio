@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Magppie — Wellness Kitchen Assessment</title>
+<meta name="description" content="Discover your kitchen's wellness score. Take the free 2-minute assessment and get a personalized report for your dream wellness kitchen." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green: #1B3A2D;
+    --sand: #C8BFB0;
+    --cream: #F7F4F0;
+    --ink: #2B2B2B;
+    --paper: #FFFFFF;
+    --line: #E4DED4;
+    --sand-soft: #EFEAE2;
+    --green-soft: #2C5440;
+    --green-light: #EEF3EF;
+    --shadow: 0 1px 2px rgba(43,43,43,0.04), 0 8px 30px rgba(27,58,45,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { height: 100%; }
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    background: var(--cream); color: var(--ink);
+    -webkit-font-smoothing: antialiased; line-height: 1.6;
+    min-height: 100%;
+  }
+
+  .site-head { border-bottom: 1px solid var(--line); background: var(--cream); }
+  .site-head .wrap { display: flex; align-items: baseline; justify-content: center; gap: 12px; padding: 20px 40px; }
+  .wordmark { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 24px; letter-spacing: .5px; color: var(--green); }
+  .eyebrow { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--sand); font-weight: 500; }
+
+  .wrap { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { text-align: center; padding: 48px 0 36px; }
+  .hero h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 38px; color: var(--green); line-height: 1.15; max-width: 540px; margin: 0 auto; }
+  .hero p { margin-top: 14px; color: #6B6A64; font-size: 15px; max-width: 480px; margin-left: auto; margin-right: auto; }
+  .hero .time-badge { display: inline-block; margin-top: 16px; font-size: 12px; color: var(--green); background: var(--green-light); padding: 6px 14px; border-radius: 20px; letter-spacing: .04em; font-weight: 500; }
+
+  .step-indicator { display: flex; justify-content: center; gap: 8px; margin-bottom: 32px; }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sand); transition: all .3s; }
+  .step-dot.active { background: var(--green); width: 24px; border-radius: 4px; }
+  .step-dot.done { background: var(--green-soft); }
+
+  .step { display: none; }
+  .step.active { display: block; }
+
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 32px; box-shadow: var(--shadow); margin-bottom: 24px; }
+
+  .q-label { font-family: "Cormorant Garamond", serif; font-size: 22px; color: var(--green); margin-bottom: 16px; font-weight: 500; }
+  .q-sub { font-size: 13px; color: #8A887F; margin-bottom: 20px; }
+
+  .option-grid { display: grid; gap: 10px; }
+  .option {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; border: 1px solid var(--line); border-radius: 6px;
+    cursor: pointer; transition: all .2s; font-size: 14px;
+  }
+  .option:hover { border-color: var(--sand); background: var(--sand-soft); }
+  .option.selected { border-color: var(--green); background: var(--green-light); color: var(--green); font-weight: 500; }
+  .option input { display: none; }
+  .option .radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--sand); flex-shrink: 0; display: grid; place-items: center; transition: all .2s; }
+  .option.selected .radio { border-color: var(--green); }
+  .option.selected .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .option .check { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--sand); flex-shrink: 0; display: grid; place-items: center; transition: all .2s; }
+  .option.selected .check { border-color: var(--green); background: var(--green); }
+  .option.selected .check::after { content: ""; width: 10px; height: 8px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translateY(-1px); }
+
+  .form-input {
+    width: 100%; font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px;
+  }
+  .form-input:focus { outline: none; border-color: var(--green); }
+  .form-input::placeholder { color: #B4B1A6; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 500; margin-bottom: 5px; display: block; color: var(--ink); }
+
+  .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
+  .btn {
+    font-family: "DM Sans", sans-serif; font-size: 14px; letter-spacing: .04em;
+    border: none; border-radius: 6px; padding: 14px 32px; cursor: pointer;
+    background: var(--green); color: #fff; font-weight: 500; transition: background .18s;
+  }
+  .btn:hover { background: var(--green-soft); }
+  .btn:disabled { background: var(--sand); cursor: not-allowed; opacity: .6; }
+  .btn-ghost { background: none; color: var(--green); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: var(--sand-soft); }
+
+  /* Results */
+  .result-hero { text-align: center; padding: 48px 0 24px; }
+  .result-hero h1 { font-family: "Cormorant Garamond", serif; font-size: 36px; color: var(--green); }
+  .result-score-ring { width: 140px; height: 140px; margin: 24px auto; position: relative; }
+  .result-score-ring svg { transform: rotate(-90deg); }
+  .result-score-ring .score-text { position: absolute; inset: 0; display: grid; place-items: center; font-family: "Cormorant Garamond", serif; font-size: 42px; font-weight: 600; color: var(--green); }
+
+  .result-section { margin-bottom: 24px; }
+  .result-section h3 { font-family: "Cormorant Garamond", serif; font-size: 20px; color: var(--green); margin-bottom: 8px; }
+  .result-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .result-item:last-child { border-bottom: none; }
+  .result-icon { flex-shrink: 0; width: 20px; text-align: center; }
+  .result-good { color: var(--green); }
+  .result-warn { color: #C4862A; }
+  .result-bad { color: #B44; }
+
+  .cta-card { background: var(--green); border-radius: 8px; padding: 32px; text-align: center; color: #fff; margin-top: 24px; }
+  .cta-card h3 { font-family: "Cormorant Garamond", serif; font-size: 24px; margin-bottom: 8px; }
+  .cta-card p { font-size: 14px; opacity: .8; margin-bottom: 20px; }
+  .cta-card .btn { background: #fff; color: var(--green); }
+  .cta-card .btn:hover { background: var(--cream); }
+
+  .privacy { text-align: center; font-size: 11px; color: #8A887F; padding: 24px 0 48px; }
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <span class="wordmark">Magppie</span>
+    <span class="eyebrow">Wellness Kitchen</span>
+  </div>
+</header>
+
+<div class="wrap" id="assessment-flow">
+
+  <div class="hero" id="hero">
+    <h1>How well does your kitchen support your wellness?</h1>
+    <p>Take this 2-minute assessment to discover your kitchen's wellness score and get personalized recommendations for a healthier cooking space.</p>
+    <div class="time-badge">Takes only 2 minutes</div>
+  </div>
+
+  <div class="step-indicator" id="step-dots"></div>
+
+  <!-- Step 1: Property -->
+  <div class="step active" data-step="0">
+    <div class="card">
+      <div class="q-label">What type of home do you live in?</div>
+      <div class="option-grid" data-name="propertyType" data-type="radio">
+        <label class="option"><input type="radio" name="propertyType" value="villa" /><span class="radio"></span>Villa</label>
+        <label class="option"><input type="radio" name="propertyType" value="bungalow" /><span class="radio"></span>Bungalow</label>
+        <label class="option"><input type="radio" name="propertyType" value="penthouse" /><span class="radio"></span>Penthouse</label>
+        <label class="option"><input type="radio" name="propertyType" value="apartment-4bhk" /><span class="radio"></span>4 BHK+ Apartment</label>
+        <label class="option"><input type="radio" name="propertyType" value="apartment-3bhk" /><span class="radio"></span>3 BHK Apartment</label>
+        <label class="option"><input type="radio" name="propertyType" value="farmhouse" /><span class="radio"></span>Farmhouse</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: City -->
+  <div class="step" data-step="1">
+    <div class="card">
+      <div class="q-label">Which city are you in?</div>
+      <div class="option-grid" data-name="city" data-type="radio">
+        <label class="option"><input type="radio" name="city" value="mumbai" /><span class="radio"></span>Mumbai</label>
+        <label class="option"><input type="radio" name="city" value="delhi" /><span class="radio"></span>Delhi NCR</label>
+        <label class="option"><input type="radio" name="city" value="bangalore" /><span class="radio"></span>Bangalore</label>
+        <label class="option"><input type="radio" name="city" value="hyderabad" /><span class="radio"></span>Hyderabad</label>
+        <label class="option"><input type="radio" name="city" value="pune" /><span class="radio"></span>Pune</label>
+        <label class="option"><input type="radio" name="city" value="other-metro" /><span class="radio"></span>Other City</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Wellness Interests -->
+  <div class="step" data-step="2">
+    <div class="card">
+      <div class="q-label">What matters most to you in a kitchen?</div>
+      <div class="q-sub">Select all that apply</div>
+      <div class="option-grid" data-name="wellness" data-type="multi">
+        <label class="option"><input type="checkbox" name="wellness" value="toxin-free-living" /><span class="check"></span>Toxin-free, chemical-free materials</label>
+        <label class="option"><input type="checkbox" name="wellness" value="air-water-quality" /><span class="check"></span>Clean air & purified water systems</label>
+        <label class="option"><input type="checkbox" name="wellness" value="organic-cooking" /><span class="check"></span>Organic, healthy cooking lifestyle</label>
+        <label class="option"><input type="checkbox" name="wellness" value="biophilic-design" /><span class="check"></span>Natural light, plants, biophilic design</label>
+        <label class="option"><input type="checkbox" name="wellness" value="health-conscious" /><span class="check"></span>Overall health-conscious lifestyle</label>
+        <label class="option"><input type="checkbox" name="wellness" value="yoga-fitness" /><span class="check"></span>Active lifestyle — yoga, fitness, mindfulness</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Current Kitchen Pain Points -->
+  <div class="step" data-step="3">
+    <div class="card">
+      <div class="q-label">What frustrates you about your current kitchen?</div>
+      <div class="q-sub">Select all that apply</div>
+      <div class="option-grid" data-name="painPoints" data-type="multi">
+        <label class="option"><input type="checkbox" name="painPoints" value="poor-ventilation" /><span class="check"></span>Poor ventilation & cooking fumes</label>
+        <label class="option"><input type="checkbox" name="painPoints" value="cheap-materials" /><span class="check"></span>Low-quality or peeling materials</label>
+        <label class="option"><input type="checkbox" name="painPoints" value="poor-storage" /><span class="check"></span>Inadequate storage and organization</label>
+        <label class="option"><input type="checkbox" name="painPoints" value="poor-lighting" /><span class="check"></span>Bad lighting and dark spaces</label>
+        <label class="option"><input type="checkbox" name="painPoints" value="no-water-filter" /><span class="check"></span>No integrated water purification</label>
+        <label class="option"><input type="checkbox" name="painPoints" value="outdated-design" /><span class="check"></span>Outdated design that doesn't inspire</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 5: Timeline & Budget -->
+  <div class="step" data-step="4">
+    <div class="card">
+      <div class="q-label">When are you planning your new kitchen?</div>
+      <div class="option-grid" data-name="timeline" data-type="radio">
+        <label class="option"><input type="radio" name="timeline" value="immediate" /><span class="radio"></span>Right now — ready to start</label>
+        <label class="option"><input type="radio" name="timeline" value="3-months" /><span class="radio"></span>In the next 3 months</label>
+        <label class="option"><input type="radio" name="timeline" value="6-months" /><span class="radio"></span>In 6 months</label>
+        <label class="option"><input type="radio" name="timeline" value="12-months" /><span class="radio"></span>Within a year</label>
+        <label class="option"><input type="radio" name="timeline" value="just-exploring" /><span class="radio"></span>Just exploring ideas</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 6: Budget -->
+  <div class="step" data-step="5">
+    <div class="card">
+      <div class="q-label">What's your investment range for the kitchen?</div>
+      <div class="q-sub">Magppie kitchens are handcrafted, wellness-certified, and built to last a lifetime</div>
+      <div class="option-grid" data-name="budget" data-type="radio">
+        <label class="option"><input type="radio" name="budget" value="15-20L" /><span class="radio"></span>₹15 – 20 Lakhs</label>
+        <label class="option"><input type="radio" name="budget" value="20-30L" /><span class="radio"></span>₹20 – 30 Lakhs</label>
+        <label class="option"><input type="radio" name="budget" value="30-50L" /><span class="radio"></span>₹30 – 50 Lakhs</label>
+        <label class="option"><input type="radio" name="budget" value="50L+" /><span class="radio"></span>₹50 Lakhs and above</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 7: Contact -->
+  <div class="step" data-step="6">
+    <div class="card">
+      <div class="q-label">Almost there — where should we send your wellness report?</div>
+      <div class="q-sub">Your personalized Wellness Kitchen Report will be ready instantly</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input class="form-input" id="wa-name" placeholder="Your name" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone *</label>
+          <input class="form-input" id="wa-phone" placeholder="+91 98XXX XXXXX" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="wa-email" type="email" placeholder="your@email.com" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-row" id="nav-row">
+    <button class="btn btn-ghost" id="prev-btn" style="visibility: hidden;">Back</button>
+    <button class="btn" id="next-btn">Next</button>
+  </div>
+
+  <!-- Results -->
+  <div class="step" data-step="result" id="result-step">
+    <div class="result-hero">
+      <h1>Your Wellness Kitchen Score</h1>
+    </div>
+    <div class="result-score-ring" id="score-ring">
+      <svg width="140" height="140">
+        <circle cx="70" cy="70" r="60" fill="none" stroke="#E4DED4" stroke-width="8" />
+        <circle cx="70" cy="70" r="60" fill="none" stroke="#1B3A2D" stroke-width="8"
+          stroke-dasharray="377" stroke-dashoffset="377" stroke-linecap="round" id="score-arc" />
+      </svg>
+      <div class="score-text" id="score-val">0</div>
+    </div>
+
+    <div class="card" id="result-card"></div>
+
+    <div class="cta-card">
+      <h3>Ready to build your wellness kitchen?</h3>
+      <p>Book a complimentary consultation with a Magppie wellness kitchen specialist. We'll visit your space, understand your lifestyle, and design a kitchen that truly supports your health.</p>
+      <button class="btn" id="book-consult-btn">Book Your Free Consultation</button>
+    </div>
+  </div>
+</div>
+
+<div class="privacy">Your information is private and never shared. By submitting, you agree to receive your wellness report from Magppie.</div>
+
+<script>
+const TOTAL_STEPS = 7;
+let current = 0;
+const answers = {};
+
+const $ = (id) => document.getElementById(id);
+
+function buildDots() {
+  const container = $("step-dots");
+  container.innerHTML = "";
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const dot = document.createElement("div");
+    dot.className = "step-dot" + (i === current ? " active" : i < current ? " done" : "");
+    container.appendChild(dot);
+  }
+}
+
+function showStep(n) {
+  document.querySelectorAll(".step").forEach((s) => s.classList.remove("active"));
+  const target = document.querySelector('.step[data-step="' + n + '"]');
+  if (target) target.classList.add("active");
+  current = n;
+  buildDots();
+
+  $("prev-btn").style.visibility = n === 0 ? "hidden" : "visible";
+  $("next-btn").textContent = n === TOTAL_STEPS - 1 ? "Get My Report" : "Next";
+
+  if (n === "result") {
+    $("nav-row").style.display = "none";
+    $("step-dots").style.display = "none";
+    $("hero").style.display = "none";
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+document.querySelectorAll(".option").forEach((opt) => {
+  opt.addEventListener("click", () => {
+    const grid = opt.closest(".option-grid");
+    const type = grid.dataset.type;
+    const input = opt.querySelector("input");
+
+    if (type === "radio") {
+      grid.querySelectorAll(".option").forEach((o) => o.classList.remove("selected"));
+      opt.classList.add("selected");
+      input.checked = true;
+    } else {
+      input.checked = !input.checked;
+      opt.classList.toggle("selected", input.checked);
+    }
+  });
+});
+
+$("next-btn").addEventListener("click", () => {
+  collectCurrentStep();
+
+  if (current === TOTAL_STEPS - 1) {
+    const name = $("wa-name").value.trim();
+    const phone = $("wa-phone").value.trim();
+    if (!name || !phone) {
+      $("wa-name").style.borderColor = name ? "var(--line)" : "#E3C9BE";
+      $("wa-phone").style.borderColor = phone ? "var(--line)" : "#E3C9BE";
+      return;
+    }
+    answers.name = name;
+    answers.phone = phone;
+    answers.email = $("wa-email").value.trim();
+    showResults();
+    return;
+  }
+
+  showStep(current + 1);
+});
+
+$("prev-btn").addEventListener("click", () => {
+  if (current > 0) showStep(current - 1);
+});
+
+function collectCurrentStep() {
+  const step = document.querySelector('.step[data-step="' + current + '"]');
+  if (!step) return;
+  step.querySelectorAll(".option-grid").forEach((grid) => {
+    const name = grid.dataset.name;
+    const type = grid.dataset.type;
+    if (type === "radio") {
+      const checked = grid.querySelector("input:checked");
+      if (checked) answers[name] = checked.value;
+    } else {
+      answers[name] = [];
+      grid.querySelectorAll("input:checked").forEach((cb) => answers[name].push(cb.value));
+    }
+  });
+}
+
+function showResults() {
+  const score = calculateWellnessScore();
+  showStep("result");
+
+  setTimeout(() => {
+    const arc = $("score-arc");
+    const offset = 377 - (377 * score / 100);
+    arc.style.transition = "stroke-dashoffset 1.2s ease";
+    arc.setAttribute("stroke-dashoffset", offset);
+
+    let counter = 0;
+    const interval = setInterval(() => {
+      counter += 2;
+      if (counter >= score) { counter = score; clearInterval(interval); }
+      $("score-val").textContent = counter;
+    }, 20);
+  }, 200);
+
+  renderResultCard(score);
+  submitLead(score);
+}
+
+function calculateWellnessScore() {
+  let score = 30;
+
+  const wellnessCount = (answers.wellness || []).length;
+  score += wellnessCount * 8;
+
+  const painCount = (answers.painPoints || []).length;
+  score -= painCount * 3;
+
+  if (["villa", "bungalow", "penthouse"].includes(answers.propertyType)) score += 10;
+  else if (answers.propertyType === "apartment-4bhk") score += 5;
+
+  if (answers.timeline === "immediate" || answers.timeline === "3-months") score += 5;
+
+  if (answers.budget === "50L+" || answers.budget === "30-50L") score += 5;
+
+  return Math.max(15, Math.min(95, score));
+}
+
+function renderResultCard(score) {
+  const card = $("result-card");
+  let level, message;
+
+  if (score >= 70) {
+    level = "Excellent Foundation";
+    message = "Your wellness awareness is high. A Magppie wellness kitchen would elevate your space from good to extraordinary — with toxin-free materials, integrated air and water purification, and biophilic design elements.";
+  } else if (score >= 45) {
+    level = "Room to Grow";
+    message = "You care about wellness but your kitchen may not fully support it yet. A purpose-built wellness kitchen could transform your daily cooking experience and significantly improve your family's health.";
+  } else {
+    level = "Wellness Opportunity";
+    message = "Your kitchen has significant room for wellness improvement. The good news: a thoughtfully designed Magppie kitchen addresses every concern — from materials to air quality to natural light.";
+  }
+
+  const recommendations = [];
+  if ((answers.painPoints || []).includes("poor-ventilation")) recommendations.push({ icon: "good", text: "Magppie's integrated downdraft ventilation eliminates cooking fumes at the source" });
+  if ((answers.painPoints || []).includes("cheap-materials")) recommendations.push({ icon: "good", text: "Magppie uses only toxin-free, VOC-free, food-safe materials certified for wellness" });
+  if ((answers.painPoints || []).includes("no-water-filter")) recommendations.push({ icon: "good", text: "Built-in 5-stage water purification integrated into the countertop design" });
+  if ((answers.painPoints || []).includes("poor-lighting")) recommendations.push({ icon: "good", text: "Circadian-aware lighting design that supports your natural energy rhythms" });
+  if ((answers.wellness || []).includes("biophilic-design")) recommendations.push({ icon: "good", text: "Herb gardens, natural stone, wood accents — nature woven into every surface" });
+  if ((answers.wellness || []).includes("organic-cooking")) recommendations.push({ icon: "good", text: "Dedicated organic prep zones, composting integration, and farm-to-table workflow" });
+  if ((answers.wellness || []).includes("air-water-quality")) recommendations.push({ icon: "good", text: "HEPA-grade kitchen air purification and integrated water quality monitoring" });
+  if (recommendations.length < 3) recommendations.push({ icon: "good", text: "Handcrafted with wellness-certified Silverstone surfaces and brushed brass accents" });
+
+  card.innerHTML =
+    '<div class="result-section">' +
+      '<h3>' + level + '</h3>' +
+      '<p style="font-size:14px;color:#6B6A64;line-height:1.6;">' + message + '</p>' +
+    '</div>' +
+    '<div class="result-section">' +
+      '<h3>Your Personalized Wellness Kitchen Recommendations</h3>' +
+      recommendations.map((r) => '<div class="result-item"><span class="result-icon result-' + r.icon + '">&#10003;</span><span>' + r.text + '</span></div>').join("") +
+    '</div>';
+}
+
+function submitLead(wellnessScore) {
+  const leadData = {
+    name: answers.name,
+    phone: answers.phone,
+    email: answers.email || "",
+    city: answers.city || "",
+    propertyType: answers.propertyType || "",
+    timeline: answers.timeline || "",
+    budgetRange: answers.budget || "",
+    wellnessInterests: answers.wellness || [],
+    painPoints: answers.painPoints || [],
+    wellnessScore,
+    channel: "digital-content",
+    source: "wellness-assessment",
+    submittedAt: new Date().toISOString(),
+  };
+
+  const existing = JSON.parse(localStorage.getItem("magppie_leads") || "[]");
+  const SCORING = {
+    netWorth: { "5cr-10cr": 20, "10cr-25cr": 30, "25cr-50cr": 38, "50cr+": 40 },
+    propertyType: { "apartment-3bhk": 5, "apartment-4bhk": 10, "penthouse": 18, "villa": 20, "bungalow": 20, "farmhouse": 15 },
+    city: { "mumbai": 10, "delhi": 10, "bangalore": 10, "hyderabad": 9, "pune": 8, "chennai": 8, "kolkata": 7, "ahmedabad": 8, "goa": 9, "chandigarh": 7, "jaipur": 7, "lucknow": 6, "other-metro": 5, "tier2": 3 },
+    wellnessInterest: { "organic-cooking": 8, "health-conscious": 7, "yoga-fitness": 6, "air-water-quality": 9, "toxin-free-living": 10, "biophilic-design": 8 },
+    timeline: { "immediate": 20, "3-months": 16, "6-months": 10, "12-months": 5, "just-exploring": 2 },
+    budget: { "15-20L": 5, "20-30L": 15, "30-50L": 18, "50L+": 20 },
+  };
+
+  let score = 0;
+  score += SCORING.propertyType[leadData.propertyType] || 0;
+  score += SCORING.city[leadData.city] || 0;
+  const wScore = (leadData.wellnessInterests || []).reduce((s, w) => s + (SCORING.wellnessInterest[w] || 0), 0);
+  score += Math.min(wScore, 30);
+  score += SCORING.timeline[leadData.timeline] || 0;
+  score += SCORING.budget[leadData.budgetRange] || 0;
+  const normalized = Math.round((score / 150) * 100);
+  const grade = normalized >= 75 ? "A" : normalized >= 55 ? "B" : normalized >= 35 ? "C" : "D";
+  const qualification = normalized >= 70 ? "sql" : normalized >= 45 ? "mql" : "prospect";
+
+  const lead = {
+    id: "WA-" + Date.now().toString(36).toUpperCase(),
+    name: leadData.name,
+    phone: leadData.phone,
+    email: leadData.email,
+    city: leadData.city,
+    propertyType: leadData.propertyType,
+    timeline: leadData.timeline,
+    budgetRange: leadData.budgetRange,
+    wellnessInterests: leadData.wellnessInterests,
+    score: normalized,
+    grade,
+    stage: qualification,
+    estimatedDealValue: 25_00_000,
+    source: "digital-content",
+    tags: ["wellness-assessment"],
+    createdAt: new Date().toISOString(),
+  };
+
+  if (normalized >= 70) lead.tags.push("hot-lead");
+  if (leadData.timeline === "immediate" || leadData.timeline === "3-months") lead.tags.push("urgent");
+
+  existing.unshift(lead);
+  localStorage.setItem("magppie_leads", JSON.stringify(existing));
+}
+
+$("book-consult-btn").addEventListener("click", () => {
+  alert("Thank you, " + answers.name + "! A Magppie wellness kitchen specialist will reach out to you within 24 hours at " + answers.phone + ".");
+});
+
+buildDots();
+</script>
+</body>
+</html>

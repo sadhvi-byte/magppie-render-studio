@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Magppie Lead Engine — ₹22 Cr Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green: #1B3A2D;
+    --sand: #C8BFB0;
+    --cream: #F7F4F0;
+    --ink: #2B2B2B;
+    --paper: #FFFFFF;
+    --line: #E4DED4;
+    --sand-soft: #EFEAE2;
+    --green-soft: #2C5440;
+    --green-light: #EEF3EF;
+    --amber: #8A5A2B;
+    --amber-bg: #FBF3EC;
+    --amber-line: #ECDAC8;
+    --red: #8A3333;
+    --red-bg: #FBF1EC;
+    --red-line: #E3C9BE;
+    --blue: #2B5A8A;
+    --blue-bg: #ECF1FB;
+    --shadow: 0 1px 2px rgba(43,43,43,0.04), 0 8px 30px rgba(27,58,45,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    background: var(--cream); color: var(--ink);
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+  }
+
+  .site-head { border-bottom: 1px solid var(--line); background: var(--cream); position: sticky; top: 0; z-index: 20; }
+  .site-head .wrap { display: flex; align-items: baseline; gap: 16px; padding: 18px 40px; }
+  .wordmark { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 27px; letter-spacing: .5px; color: var(--green); }
+  .eyebrow { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--sand); font-weight: 500; }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+  main { padding: 36px 0 80px; }
+
+  .nav-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
+  .nav-tab { font-family: "DM Sans", sans-serif; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; padding: 12px 20px; background: none; border: none; border-bottom: 2px solid transparent; color: #8A887F; cursor: pointer; transition: all .2s; }
+  .nav-tab:hover { color: var(--ink); }
+  .nav-tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 600; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 32px; color: var(--green); margin-bottom: 8px; }
+  h3 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 22px; color: var(--green); margin-bottom: 12px; }
+  .subtitle { color: #6B6A64; font-size: 14px; margin-bottom: 28px; }
+
+  /* Cards */
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 24px; box-shadow: var(--shadow); }
+  .card + .card { margin-top: 16px; }
+
+  /* Target strip */
+  .target-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  @media (max-width: 860px) { .target-strip { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 20px 24px; box-shadow: var(--shadow); }
+  .kpi-label { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--sand); font-weight: 500; margin-bottom: 6px; }
+  .kpi-value { font-family: "Cormorant Garamond", serif; font-size: 36px; font-weight: 600; color: var(--green); line-height: 1.1; }
+  .kpi-sub { font-size: 12px; color: #8A887F; margin-top: 4px; }
+  .kpi.highlight { background: var(--green); border-color: var(--green); }
+  .kpi.highlight .kpi-label { color: rgba(255,255,255,.6); }
+  .kpi.highlight .kpi-value { color: #fff; }
+  .kpi.highlight .kpi-sub { color: rgba(255,255,255,.5); }
+
+  /* Progress bar */
+  .progress-wrap { margin-bottom: 32px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .progress-label { font-size: 13px; font-weight: 600; color: var(--green); }
+  .progress-pct { font-size: 13px; color: #8A887F; }
+  .progress-bar { height: 10px; background: var(--sand-soft); border-radius: 5px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--green-soft)); border-radius: 5px; transition: width .6s ease; }
+
+  /* Funnel */
+  .funnel { display: flex; flex-direction: column; gap: 0; }
+  .funnel-row { display: grid; grid-template-columns: 140px 1fr 80px 80px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .funnel-row:last-child { border-bottom: none; }
+  .funnel-stage { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+  .funnel-bar-wrap { padding: 0 16px; }
+  .funnel-bar { height: 28px; border-radius: 4px; position: relative; display: flex; align-items: center; }
+  .funnel-bar-fill { height: 100%; border-radius: 4px; min-width: 4px; }
+  .funnel-bar-text { position: absolute; left: 12px; font-size: 12px; font-weight: 600; color: #fff; }
+  .funnel-target { font-size: 13px; color: #8A887F; text-align: right; }
+  .funnel-actual { font-size: 13px; font-weight: 600; text-align: right; }
+
+  .stage-suspect .funnel-bar-fill { background: #B8C4BD; }
+  .stage-prospect .funnel-bar-fill { background: #8FA898; }
+  .stage-mql .funnel-bar-fill { background: #6A8E78; }
+  .stage-sql .funnel-bar-fill { background: #4A7560; }
+  .stage-proposal .funnel-bar-fill { background: var(--green-soft); }
+  .stage-negotiation .funnel-bar-fill { background: var(--green); }
+  .stage-won .funnel-bar-fill { background: #0F261D; }
+
+  /* Channel grid */
+  .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .channel-card { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 20px; box-shadow: var(--shadow); }
+  .channel-name { font-size: 14px; font-weight: 600; color: var(--green); margin-bottom: 4px; }
+  .channel-meta { font-size: 12px; color: #8A887F; margin-bottom: 12px; }
+  .channel-stats { display: flex; gap: 20px; }
+  .channel-stat { }
+  .channel-stat-val { font-size: 20px; font-weight: 700; color: var(--ink); }
+  .channel-stat-label { font-size: 11px; color: #8A887F; text-transform: uppercase; letter-spacing: .1em; }
+  .channel-bar { height: 6px; background: var(--sand-soft); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+  .channel-bar-fill { height: 100%; background: var(--green); border-radius: 3px; }
+
+  /* Scoring model */
+  .scoring-table { width: 100%; border-collapse: collapse; }
+  .scoring-table th { font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--sand); font-weight: 500; text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--line); }
+  .scoring-table td { font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .scoring-table tr:last-child td { border-bottom: none; }
+  .scoring-table .pts { font-weight: 700; color: var(--green); text-align: right; }
+
+  .grade-badges { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .grade-badge { padding: 8px 16px; border-radius: 4px; font-size: 13px; font-weight: 600; }
+  .grade-a { background: var(--green-light); color: var(--green); border: 1px solid #C0D4C6; }
+  .grade-b { background: var(--blue-bg); color: var(--blue); border: 1px solid #C0CCE3; }
+  .grade-c { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-line); }
+  .grade-d { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-line); }
+
+  /* Lead table */
+  .lead-table-wrap { overflow-x: auto; }
+  .lead-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+  .lead-table th { font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--sand); font-weight: 500; text-align: left; padding: 12px; border-bottom: 2px solid var(--line); position: sticky; top: 0; background: var(--paper); }
+  .lead-table td { font-size: 13px; padding: 12px; border-bottom: 1px solid var(--line); }
+  .lead-table tr:hover td { background: var(--sand-soft); }
+  .tag { display: inline-block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; font-weight: 600; margin-right: 4px; }
+  .tag-hot { background: var(--green-light); color: var(--green); }
+  .tag-uhni { background: #F0E6FF; color: #5B2D8E; }
+  .tag-hni { background: var(--blue-bg); color: var(--blue); }
+  .tag-urgent { background: var(--amber-bg); color: var(--amber); }
+
+  .score-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+  .score-a { background: var(--green-light); color: var(--green); }
+  .score-b { background: var(--blue-bg); color: var(--blue); }
+  .score-c { background: var(--amber-bg); color: var(--amber); }
+  .score-d { background: var(--red-bg); color: var(--red); }
+
+  /* Add lead form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-group { }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 6px; display: block; letter-spacing: .02em; }
+  .form-input, .form-select {
+    width: 100%; font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px;
+  }
+  .form-select { cursor: pointer; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232B2B2B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+  .form-input:focus, .form-select:focus { outline: none; border-color: var(--green); }
+  .form-input::placeholder { color: #B4B1A6; }
+
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px; transition: all .2s; }
+  .checkbox-item:hover { border-color: var(--sand); }
+  .checkbox-item.selected { background: var(--green-light); border-color: var(--green); color: var(--green); font-weight: 500; }
+  .checkbox-item input { display: none; }
+
+  .btn { font-family: "DM Sans", sans-serif; font-size: 14px; letter-spacing: .04em; border: none; border-radius: 4px; padding: 12px 28px; cursor: pointer; background: var(--green); color: #fff; transition: background .18s ease; font-weight: 500; }
+  .btn:hover { background: var(--green-soft); }
+  .btn-ghost { background: transparent; color: var(--green); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: var(--sand-soft); border-color: var(--sand); }
+  .btn-sm { padding: 8px 16px; font-size: 12px; }
+
+  .actions-bar { display: flex; gap: 12px; margin-top: 20px; align-items: center; }
+
+  /* Score result */
+  .score-result { padding: 24px; border-radius: 6px; margin-top: 20px; display: none; }
+  .score-result.show { display: block; }
+  .score-result h4 { font-family: "Cormorant Garamond", serif; font-size: 24px; font-weight: 500; margin-bottom: 8px; }
+  .score-result .next-action { font-size: 13px; padding: 10px 14px; border-radius: 4px; margin-top: 12px; font-weight: 500; }
+
+  /* Strategy section */
+  .strategy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .strategy-card { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 24px; box-shadow: var(--shadow); }
+  .strategy-card h4 { font-family: "Cormorant Garamond", serif; font-size: 20px; color: var(--green); margin-bottom: 8px; }
+  .strategy-card p { font-size: 13px; color: #6B6A64; line-height: 1.6; }
+  .strategy-card ul { margin-top: 10px; padding-left: 18px; }
+  .strategy-card li { font-size: 13px; color: #6B6A64; margin-bottom: 4px; }
+  .strategy-card .metric { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); display: flex; gap: 16px; }
+  .strategy-card .metric-item { }
+  .strategy-card .metric-val { font-size: 18px; font-weight: 700; color: var(--green); }
+  .strategy-card .metric-label { font-size: 11px; color: #8A887F; text-transform: uppercase; letter-spacing: .1em; }
+
+  .section-label { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--green); font-weight: 500; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 960px) { .two-col { grid-template-columns: 1fr; } }
+
+  .monthly-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 16px; }
+  @media (max-width: 640px) { .monthly-grid { grid-template-columns: repeat(2, 1fr); } }
+  .month-card { background: var(--sand-soft); border-radius: 4px; padding: 12px; text-align: center; }
+  .month-name { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: #8A887F; }
+  .month-target { font-size: 18px; font-weight: 700; color: var(--green); margin-top: 2px; }
+  .month-revenue { font-size: 11px; color: #8A887F; }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: #8A887F; }
+  .empty-state h4 { font-family: "Cormorant Garamond", serif; font-size: 22px; color: var(--green); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <span class="wordmark">Magppie</span>
+    <span class="eyebrow">Lead Engine</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="nav-tabs" id="navTabs">
+    <button class="nav-tab active" data-panel="dashboard">Dashboard</button>
+    <button class="nav-tab" data-panel="funnel">Funnel</button>
+    <button class="nav-tab" data-panel="channels">Channels</button>
+    <button class="nav-tab" data-panel="leads">Leads</button>
+    <button class="nav-tab" data-panel="scoring">Scoring Model</button>
+    <button class="nav-tab" data-panel="strategy">Strategy</button>
+  </div>
+
+  <!-- ========== DASHBOARD ========== -->
+  <section class="panel active" id="panel-dashboard">
+    <h2>Pipeline to ₹22 Crores</h2>
+    <p class="subtitle">Wellness-focused modular kitchens for HNI & UHNI clients at ₹25 Lakh average deal value</p>
+
+    <div class="target-strip">
+      <div class="kpi highlight">
+        <div class="kpi-label">Revenue Target</div>
+        <div class="kpi-value">₹22 Cr</div>
+        <div class="kpi-sub">FY 2026-27</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Deals Needed</div>
+        <div class="kpi-value" id="kpi-deals">88</div>
+        <div class="kpi-sub">at ₹25L avg deal</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Qualified Leads (SQLs)</div>
+        <div class="kpi-value" id="kpi-sqls">176</div>
+        <div class="kpi-sub">at 50% SQL→Won</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total Pipeline Leads</div>
+        <div class="kpi-value" id="kpi-total">1,232</div>
+        <div class="kpi-sub">across all channels</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Pipeline Progress</span>
+        <span class="progress-pct" id="progress-pct">0 / 88 deals won (0%)</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-label">Monthly Qualified Lead Targets</div>
+        <div class="monthly-grid" id="monthly-grid"></div>
+      </div>
+      <div>
+        <div class="section-label">Key Metrics</div>
+        <div class="card">
+          <table class="scoring-table">
+            <tr><td>Revenue per lead (qualified)</td><td class="pts">₹12.5L</td></tr>
+            <tr><td>Leads needed per month</td><td class="pts" id="leads-per-month">15</td></tr>
+            <tr><td>Avg. sales cycle</td><td class="pts">45-90 days</td></tr>
+            <tr><td>Target close rate</td><td class="pts">50%</td></tr>
+            <tr><td>Cost per qualified lead</td><td class="pts">₹8,000-15,000</td></tr>
+            <tr><td>Customer LTV</td><td class="pts">₹35-50L</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FUNNEL ========== -->
+  <section class="panel" id="panel-funnel">
+    <h2>Lead Funnel</h2>
+    <p class="subtitle">From first touch to signed kitchen — every stage mapped to the ₹22 Cr target</p>
+
+    <div class="card">
+      <div class="funnel" id="funnel-view"></div>
+    </div>
+
+    <div style="margin-top: 24px;">
+      <div class="section-label">Conversion Rates</div>
+      <div class="card">
+        <table class="scoring-table">
+          <thead><tr><th>Stage Transition</th><th style="text-align:right">Target Rate</th></tr></thead>
+          <tbody id="conversion-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CHANNELS ========== -->
+  <section class="panel" id="panel-channels">
+    <h2>Channel Strategy</h2>
+    <p class="subtitle">Lead generation targets by acquisition channel — optimized for HNI/UHNI wellness kitchen buyers</p>
+
+    <div class="channel-grid" id="channel-grid"></div>
+  </section>
+
+  <!-- ========== LEADS ========== -->
+  <section class="panel" id="panel-leads">
+    <h2>Lead Management</h2>
+    <p class="subtitle">Add, score, and qualify leads in real-time</p>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <h3>Add New Lead</h3>
+      <div style="margin-top: 16px;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input class="form-input" id="lead-name" placeholder="e.g. Mr. Rajesh Khanna" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone *</label>
+            <input class="form-input" id="lead-phone" placeholder="+91 98XXX XXXXX" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="lead-email" type="email" placeholder="email@example.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">City</label>
+            <select class="form-select" id="lead-city">
+              <option value="">Select city</option>
+              <option value="mumbai">Mumbai</option>
+              <option value="delhi">Delhi NCR</option>
+              <option value="bangalore">Bangalore</option>
+              <option value="hyderabad">Hyderabad</option>
+              <option value="pune">Pune</option>
+              <option value="chennai">Chennai</option>
+              <option value="ahmedabad">Ahmedabad</option>
+              <option value="goa">Goa</option>
+              <option value="kolkata">Kolkata</option>
+              <option value="chandigarh">Chandigarh</option>
+              <option value="jaipur">Jaipur</option>
+              <option value="lucknow">Lucknow</option>
+              <option value="other-metro">Other Metro</option>
+              <option value="tier2">Tier 2</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Net Worth Bracket</label>
+            <select class="form-select" id="lead-networth">
+              <option value="">Select bracket</option>
+              <option value="5cr-10cr">₹5 Cr – ₹10 Cr (HNI)</option>
+              <option value="10cr-25cr">₹10 Cr – ₹25 Cr (HNI)</option>
+              <option value="25cr-50cr">₹25 Cr – ₹50 Cr (UHNI)</option>
+              <option value="50cr+">₹50 Cr+ (UHNI)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Property Type</label>
+            <select class="form-select" id="lead-property">
+              <option value="">Select property</option>
+              <option value="apartment-3bhk">3 BHK Apartment</option>
+              <option value="apartment-4bhk">4 BHK Apartment</option>
+              <option value="penthouse">Penthouse</option>
+              <option value="villa">Villa</option>
+              <option value="bungalow">Bungalow</option>
+              <option value="farmhouse">Farmhouse</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kitchen Timeline</label>
+            <select class="form-select" id="lead-timeline">
+              <option value="">Select timeline</option>
+              <option value="immediate">Immediate (this month)</option>
+              <option value="3-months">Within 3 months</option>
+              <option value="6-months">Within 6 months</option>
+              <option value="12-months">Within 12 months</option>
+              <option value="just-exploring">Just exploring</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Budget Range</label>
+            <select class="form-select" id="lead-budget">
+              <option value="">Select budget</option>
+              <option value="15-20L">₹15–20 Lakhs</option>
+              <option value="20-30L">₹20–30 Lakhs</option>
+              <option value="30-50L">₹30–50 Lakhs</option>
+              <option value="50L+">₹50 Lakhs+</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Decision Authority</label>
+            <select class="form-select" id="lead-decision">
+              <option value="">Select role</option>
+              <option value="self">Self (decision maker)</option>
+              <option value="joint">Joint decision</option>
+              <option value="advisor">Advisor / Influencer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lead Channel</label>
+            <select class="form-select" id="lead-channel">
+              <option value="">Select channel</option>
+              <option value="architect-referral">Architect Referral</option>
+              <option value="designer-referral">Designer Referral</option>
+              <option value="real-estate-partner">Real Estate Partner</option>
+              <option value="wellness-event">Wellness Event</option>
+              <option value="digital-content">Digital / Website</option>
+              <option value="client-referral">Client Referral</option>
+              <option value="luxury-media">Luxury Media</option>
+              <option value="walk-in">Walk-in</option>
+              <option value="social-media">Social Media</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Wellness Interests</label>
+            <div class="checkbox-group" id="wellness-checks">
+              <label class="checkbox-item" data-value="toxin-free-living"><input type="checkbox" />Toxin-free Living</label>
+              <label class="checkbox-item" data-value="air-water-quality"><input type="checkbox" />Air & Water Quality</label>
+              <label class="checkbox-item" data-value="organic-cooking"><input type="checkbox" />Organic Cooking</label>
+              <label class="checkbox-item" data-value="biophilic-design"><input type="checkbox" />Biophilic Design</label>
+              <label class="checkbox-item" data-value="health-conscious"><input type="checkbox" />Health Conscious</label>
+              <label class="checkbox-item" data-value="yoga-fitness"><input type="checkbox" />Yoga & Fitness</label>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Notes</label>
+            <input class="form-input" id="lead-notes" placeholder="Any additional context about the lead..." />
+          </div>
+        </div>
+        <div class="actions-bar">
+          <button class="btn" id="score-lead-btn">Score & Add Lead</button>
+          <button class="btn btn-ghost" id="clear-form-btn">Clear</button>
+        </div>
+      </div>
+
+      <div class="score-result" id="score-result">
+        <div id="score-result-content"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin-bottom: 0;">Lead Pipeline</h3>
+        <span style="font-size: 13px; color: #8A887F;" id="lead-count">0 leads</span>
+      </div>
+      <div class="lead-table-wrap">
+        <table class="lead-table" id="lead-table">
+          <thead>
+            <tr>
+              <th>Lead</th>
+              <th>Score</th>
+              <th>Stage</th>
+              <th>City</th>
+              <th>Deal Value</th>
+              <th>Channel</th>
+              <th>Tags</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="lead-tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="leads-empty">
+        <h4>No leads yet</h4>
+        <p>Add your first lead using the form above, or share the Wellness Kitchen Assessment with prospects.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SCORING MODEL ========== -->
+  <section class="panel" id="panel-scoring">
+    <h2>Lead Scoring Model</h2>
+    <p class="subtitle">HNI/UHNI scoring framework calibrated for ₹25L+ wellness kitchen buyers</p>
+
+    <div class="grade-badges">
+      <div class="grade-badge grade-a">Grade A (75-100) — Sales-ready, book consultation</div>
+      <div class="grade-badge grade-b">Grade B (55-74) — Marketing qualified, send lookbook</div>
+      <div class="grade-badge grade-c">Grade C (35-54) — Nurture with wellness content</div>
+      <div class="grade-badge grade-d">Grade D (0-34) — Long-term nurture / disqualify</div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <h3>Demographics & Wealth (max 40 pts)</h3>
+          <table class="scoring-table">
+            <thead><tr><th>Net Worth Bracket</th><th style="text-align:right">Points</th></tr></thead>
+            <tbody>
+              <tr><td>₹50 Cr+ (UHNI)</td><td class="pts">40</td></tr>
+              <tr><td>₹25–50 Cr (UHNI)</td><td class="pts">38</td></tr>
+              <tr><td>₹10–25 Cr (HNI)</td><td class="pts">30</td></tr>
+              <tr><td>₹5–10 Cr (HNI)</td><td class="pts">20</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>Property Type (max 20 pts)</h3>
+          <table class="scoring-table">
+            <thead><tr><th>Property</th><th style="text-align:right">Points</th></tr></thead>
+            <tbody>
+              <tr><td>Villa / Bungalow</td><td class="pts">20</td></tr>
+              <tr><td>Penthouse</td><td class="pts">18</td></tr>
+              <tr><td>Farmhouse</td><td class="pts">15</td></tr>
+              <tr><td>4 BHK Apartment</td><td class="pts">10</td></tr>
+              <tr><td>3 BHK Apartment</td><td class="pts">5</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>Wellness Interest (max 30 pts)</h3>
+          <table class="scoring-table">
+            <thead><tr><th>Wellness Signal</th><th style="text-align:right">Points</th></tr></thead>
+            <tbody>
+              <tr><td>Toxin-free living</td><td class="pts">10</td></tr>
+              <tr><td>Air & water quality focus</td><td class="pts">9</td></tr>
+              <tr><td>Organic cooking</td><td class="pts">8</td></tr>
+              <tr><td>Biophilic design interest</td><td class="pts">8</td></tr>
+              <tr><td>Health conscious lifestyle</td><td class="pts">7</td></tr>
+              <tr><td>Yoga & fitness enthusiast</td><td class="pts">6</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>Project Readiness (max 20 pts)</h3>
+          <table class="scoring-table">
+            <thead><tr><th>Timeline</th><th style="text-align:right">Points</th></tr></thead>
+            <tbody>
+              <tr><td>Immediate</td><td class="pts">20</td></tr>
+              <tr><td>Within 3 months</td><td class="pts">16</td></tr>
+              <tr><td>Within 6 months</td><td class="pts">10</td></tr>
+              <tr><td>Within 12 months</td><td class="pts">5</td></tr>
+              <tr><td>Just exploring</td><td class="pts">2</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>Budget Alignment (max 20 pts)</h3>
+          <table class="scoring-table">
+            <thead><tr><th>Budget Range</th><th style="text-align:right">Points</th></tr></thead>
+            <tbody>
+              <tr><td>₹50 Lakhs+</td><td class="pts">20</td></tr>
+              <tr><td>₹30–50 Lakhs</td><td class="pts">18</td></tr>
+              <tr><td>₹20–30 Lakhs</td><td class="pts">15</td></tr>
+              <tr><td>₹15–20 Lakhs</td><td class="pts">5</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>Decision Authority (max 10 pts)</h3>
+          <table class="scoring-table">
+            <thead><tr><th>Role</th><th style="text-align:right">Points</th></tr></thead>
+            <tbody>
+              <tr><td>Self (decision maker)</td><td class="pts">10</td></tr>
+              <tr><td>Joint decision</td><td class="pts">7</td></tr>
+              <tr><td>Advisor / Influencer</td><td class="pts">3</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>City Tier (max 10 pts)</h3>
+          <table class="scoring-table">
+            <thead><tr><th>City</th><th style="text-align:right">Points</th></tr></thead>
+            <tbody>
+              <tr><td>Mumbai / Delhi / Bangalore</td><td class="pts">10</td></tr>
+              <tr><td>Hyderabad / Goa</td><td class="pts">9</td></tr>
+              <tr><td>Pune / Chennai / Ahmedabad</td><td class="pts">8</td></tr>
+              <tr><td>Chandigarh / Jaipur / Kolkata</td><td class="pts">7</td></tr>
+              <tr><td>Other Metro</td><td class="pts">5</td></tr>
+              <tr><td>Tier 2</td><td class="pts">3</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== STRATEGY ========== -->
+  <section class="panel" id="panel-strategy">
+    <h2>Lead Generation Strategy</h2>
+    <p class="subtitle">7 channels to generate 88 qualified deals for ₹22 Cr in wellness kitchen revenue</p>
+
+    <div class="strategy-grid">
+
+      <div class="strategy-card">
+        <h4>1. Architect & Designer Network</h4>
+        <p>Build a referral ecosystem with 50+ premium architects and interior designers who work with HNI/UHNI clients. Offer design fee sharing, exclusive Magppie partner status, and co-branded wellness kitchen showcases.</p>
+        <ul>
+          <li>Host quarterly "Wellness Kitchen Design" masterclasses</li>
+          <li>Provide dedicated Magppie design liaison per partner</li>
+          <li>Co-create wellness kitchen portfolios with Render Studio</li>
+          <li>10% referral fee on converted projects</li>
+        </ul>
+        <div class="metric">
+          <div class="metric-item"><div class="metric-val">88</div><div class="metric-label">Lead Target</div></div>
+          <div class="metric-item"><div class="metric-val">35%</div><div class="metric-label">Conv. Rate</div></div>
+          <div class="metric-item"><div class="metric-val">~31</div><div class="metric-label">Deals</div></div>
+        </div>
+      </div>
+
+      <div class="strategy-card">
+        <h4>2. Premium Real Estate Partnerships</h4>
+        <p>Partner with luxury developers (Lodha, Godrej Platinum, DLF Camellias, Embassy) to offer Magppie wellness kitchens as an upgrade option during possession. Target new villa/penthouse buyers.</p>
+        <ul>
+          <li>Wellness kitchen experience zone in builder lobbies</li>
+          <li>Exclusive early-buyer wellness kitchen packages</li>
+          <li>Joint marketing with builder's CRM database</li>
+          <li>Model apartment installations with wellness features</li>
+        </ul>
+        <div class="metric">
+          <div class="metric-item"><div class="metric-val">70</div><div class="metric-label">Lead Target</div></div>
+          <div class="metric-item"><div class="metric-val">28%</div><div class="metric-label">Conv. Rate</div></div>
+          <div class="metric-item"><div class="metric-val">~20</div><div class="metric-label">Deals</div></div>
+        </div>
+      </div>
+
+      <div class="strategy-card">
+        <h4>3. Wellness Events & Retreats</h4>
+        <p>Sponsor and co-host premium wellness events — organic food festivals, yoga retreats, biohacking meetups, Ayurveda conferences. Position Magppie as "where wellness begins — in the kitchen."</p>
+        <ul>
+          <li>Pop-up wellness kitchen at 12+ events/year</li>
+          <li>"Cook Clean, Live Clean" chef-led workshops</li>
+          <li>Wellness Kitchen Assessment as event lead magnet</li>
+          <li>Exclusive tasting events at Magppie experience center</li>
+        </ul>
+        <div class="metric">
+          <div class="metric-item"><div class="metric-val">53</div><div class="metric-label">Lead Target</div></div>
+          <div class="metric-item"><div class="metric-val">22%</div><div class="metric-label">Conv. Rate</div></div>
+          <div class="metric-item"><div class="metric-val">~12</div><div class="metric-label">Deals</div></div>
+        </div>
+      </div>
+
+      <div class="strategy-card">
+        <h4>4. Digital Content & SEO</h4>
+        <p>Own the "wellness kitchen" category online. Create authority content around toxin-free materials, biophilic kitchen design, organic cooking spaces, and air/water quality in kitchens.</p>
+        <ul>
+          <li>Weekly blog: "The Wellness Kitchen Journal"</li>
+          <li>YouTube series: kitchen wellness transformations</li>
+          <li>Instagram/Pinterest: before-after wellness renders</li>
+          <li>Google Ads targeting "luxury modular kitchen" + city</li>
+        </ul>
+        <div class="metric">
+          <div class="metric-item"><div class="metric-val">53</div><div class="metric-label">Lead Target</div></div>
+          <div class="metric-item"><div class="metric-val">15%</div><div class="metric-label">Conv. Rate</div></div>
+          <div class="metric-item"><div class="metric-val">~8</div><div class="metric-label">Deals</div></div>
+        </div>
+      </div>
+
+      <div class="strategy-card">
+        <h4>5. Existing Client Referrals</h4>
+        <p>Your most powerful channel. Happy Magppie clients refer other HNIs from their social circle. Create a structured "Wellness Ambassador" referral program with compelling incentives.</p>
+        <ul>
+          <li>₹50,000 kitchen credit per successful referral</li>
+          <li>Annual "Magppie Wellness Circle" dinner events</li>
+          <li>Priority access to new collections and materials</li>
+          <li>Personalized thank-you experiences (spa, dining)</li>
+        </ul>
+        <div class="metric">
+          <div class="metric-item"><div class="metric-val">42</div><div class="metric-label">Lead Target</div></div>
+          <div class="metric-item"><div class="metric-val">40%</div><div class="metric-label">Conv. Rate</div></div>
+          <div class="metric-item"><div class="metric-val">~17</div><div class="metric-label">Deals</div></div>
+        </div>
+      </div>
+
+      <div class="strategy-card">
+        <h4>6. Luxury Lifestyle Media</h4>
+        <p>Feature in AD India, Elle Decor, Vogue Living, GQ, and wellness publications (Femina Wellness, Health Today). Position Magppie as the intersection of luxury and wellness.</p>
+        <ul>
+          <li>Quarterly advertorials in top 5 luxury magazines</li>
+          <li>Influencer partnerships with wellness advocates</li>
+          <li>PR stories: "India's first wellness-certified kitchen"</li>
+          <li>Luxury concierge partnerships (Quintessentially, etc.)</li>
+        </ul>
+        <div class="metric">
+          <div class="metric-item"><div class="metric-val">28</div><div class="metric-label">Lead Target</div></div>
+          <div class="metric-item"><div class="metric-val">12%</div><div class="metric-label">Conv. Rate</div></div>
+          <div class="metric-item"><div class="metric-val">~3</div><div class="metric-label">Deals</div></div>
+        </div>
+      </div>
+
+      <div class="strategy-card">
+        <h4>Wellness Kitchen Assessment (Lead Magnet)</h4>
+        <p>A digital wellness assessment that scores a prospect's current kitchen on health, air quality, materials toxicity, and wellness readiness. Generates a personalized "Wellness Kitchen Report" and feeds directly into the lead engine.</p>
+        <ul>
+          <li>Shareable link for all channels and events</li>
+          <li>Auto-scores and qualifies every submission</li>
+          <li>Personalized wellness recommendations</li>
+          <li>Immediate handoff to sales for Grade A leads</li>
+        </ul>
+        <div class="metric">
+          <div class="metric-item"><div class="metric-val">All</div><div class="metric-label">Channels</div></div>
+          <div class="metric-item"><div class="metric-val">24/7</div><div class="metric-label">Active</div></div>
+          <div class="metric-item"><div class="metric-val">Auto</div><div class="metric-label">Scoring</div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<script>
+const ENGINE = {
+  TARGET: 22_00_00_000,
+  AVG_DEAL: 25_00_000,
+  DEALS: 88,
+  leads: JSON.parse(localStorage.getItem("magppie_leads") || "[]"),
+};
+
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => n.toLocaleString("en-IN");
+const fmtCr = (n) => "₹" + (n / 1_00_00_000).toFixed(1) + " Cr";
+const fmtL = (n) => "₹" + (n / 1_00_000).toFixed(0) + " L";
+
+// ---- Navigation ----
+document.querySelectorAll(".nav-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".nav-tab").forEach((t) => t.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+    tab.classList.add("active");
+    $("panel-" + tab.dataset.panel).classList.add("active");
+  });
+});
+
+// ---- Dashboard: Monthly Targets ----
+function renderMonthlyTargets() {
+  const months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+  const ramp = [4, 5, 6, 7, 8, 8, 9, 9, 9, 8, 8, 7];
+  const grid = $("monthly-grid");
+  grid.innerHTML = "";
+  months.forEach((m, i) => {
+    const deals = ramp[i];
+    const rev = deals * ENGINE.AVG_DEAL;
+    grid.innerHTML += '<div class="month-card"><div class="month-name">' + m + '</div><div class="month-target">' + deals + ' deals</div><div class="month-revenue">' + fmtL(rev) + '</div></div>';
+  });
+  $("leads-per-month").textContent = "~7-9";
+}
+
+// ---- Funnel ----
+function renderFunnel() {
+  const stages = [
+    { key: "suspect", label: "Suspects", target: ENGINE.DEALS * 14 },
+    { key: "prospect", label: "Prospects", target: ENGINE.DEALS * 8 },
+    { key: "mql", label: "MQLs", target: ENGINE.DEALS * 4 },
+    { key: "sql", label: "SQLs", target: ENGINE.DEALS * 2 },
+    { key: "proposal", label: "Proposals", target: Math.round(ENGINE.DEALS * 1.4) },
+    { key: "negotiation", label: "Negotiation", target: Math.round(ENGINE.DEALS * 1.15) },
+    { key: "won", label: "Won", target: ENGINE.DEALS },
+  ];
+
+  const maxTarget = stages[0].target;
+  const view = $("funnel-view");
+  view.innerHTML = '<div class="funnel-row" style="border-bottom: 2px solid var(--line);">' +
+    '<div style="font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--sand);font-weight:500;">Stage</div>' +
+    '<div></div>' +
+    '<div style="font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--sand);font-weight:500;text-align:right;">Target</div>' +
+    '<div style="font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--sand);font-weight:500;text-align:right;">Actual</div></div>';
+
+  stages.forEach((s) => {
+    const actual = ENGINE.leads.filter((l) => l.stage === s.key).length;
+    const pct = (s.target / maxTarget) * 100;
+    const actualPct = Math.min((actual / s.target) * pct, pct);
+    view.innerHTML += '<div class="funnel-row stage-' + s.key + '">' +
+      '<div class="funnel-stage">' + s.label + '</div>' +
+      '<div class="funnel-bar-wrap"><div class="funnel-bar" style="width:' + pct + '%;background:var(--sand-soft);"><div class="funnel-bar-fill" style="width:' + (actual ? Math.max((actual / s.target) * 100, 3) : 0) + '%;"></div></div></div>' +
+      '<div class="funnel-target">' + fmt(s.target) + '</div>' +
+      '<div class="funnel-actual">' + actual + '</div></div>';
+  });
+
+  const conversionData = [
+    ["Suspect → Prospect", "57%"],
+    ["Prospect → MQL", "50%"],
+    ["MQL → SQL", "50%"],
+    ["SQL → Proposal", "70%"],
+    ["Proposal → Negotiation", "82%"],
+    ["Negotiation → Won", "77%"],
+  ];
+  const ct = $("conversion-table");
+  ct.innerHTML = "";
+  conversionData.forEach(([label, rate]) => {
+    ct.innerHTML += "<tr><td>" + label + "</td><td class=\"pts\">" + rate + "</td></tr>";
+  });
+}
+
+// ---- Channels ----
+function renderChannels() {
+  const channels = [
+    { key: "architect-referral", name: "Architect & Designer Referrals", target: 88, conv: 35, icon: "25%" },
+    { key: "real-estate-partner", name: "Premium Real Estate Partners", target: 70, conv: 28, icon: "20%" },
+    { key: "wellness-event", name: "Wellness Events & Retreats", target: 53, conv: 22, icon: "15%" },
+    { key: "digital-content", name: "Digital Content & SEO", target: 53, conv: 15, icon: "15%" },
+    { key: "client-referral", name: "Existing Client Referrals", target: 42, conv: 40, icon: "12%" },
+    { key: "luxury-media", name: "Luxury Lifestyle Media", target: 28, conv: 12, icon: "8%" },
+    { key: "other", name: "Walk-ins & Other", target: 18, conv: 10, icon: "5%" },
+  ];
+
+  const grid = $("channel-grid");
+  grid.innerHTML = "";
+  channels.forEach((ch) => {
+    const actual = ENGINE.leads.filter((l) => l.source === ch.key).length;
+    const pct = Math.min((actual / ch.target) * 100, 100);
+    grid.innerHTML += '<div class="channel-card">' +
+      '<div class="channel-name">' + ch.name + '</div>' +
+      '<div class="channel-meta">' + ch.icon + ' of pipeline | ' + ch.conv + '% expected conversion</div>' +
+      '<div class="channel-stats">' +
+        '<div class="channel-stat"><div class="channel-stat-val">' + ch.target + '</div><div class="channel-stat-label">Target Leads</div></div>' +
+        '<div class="channel-stat"><div class="channel-stat-val">' + actual + '</div><div class="channel-stat-label">Actual</div></div>' +
+        '<div class="channel-stat"><div class="channel-stat-val">' + Math.round(ch.target * ch.conv / 100) + '</div><div class="channel-stat-label">Expected Deals</div></div>' +
+      '</div>' +
+      '<div class="channel-bar"><div class="channel-bar-fill" style="width:' + pct + '%;"></div></div>' +
+    '</div>';
+  });
+}
+
+// ---- Lead Scoring (client-side mirror of API) ----
+const SCORING = {
+  netWorth: { "5cr-10cr": 20, "10cr-25cr": 30, "25cr-50cr": 38, "50cr+": 40 },
+  propertyType: { "apartment-3bhk": 5, "apartment-4bhk": 10, "penthouse": 18, "villa": 20, "bungalow": 20, "farmhouse": 15 },
+  city: { "mumbai": 10, "delhi": 10, "bangalore": 10, "hyderabad": 9, "pune": 8, "chennai": 8, "kolkata": 7, "ahmedabad": 8, "goa": 9, "chandigarh": 7, "jaipur": 7, "lucknow": 6, "other-metro": 5, "tier2": 3 },
+  wellnessInterest: { "organic-cooking": 8, "health-conscious": 7, "yoga-fitness": 6, "air-water-quality": 9, "toxin-free-living": 10, "biophilic-design": 8 },
+  timeline: { "immediate": 20, "3-months": 16, "6-months": 10, "12-months": 5, "just-exploring": 2 },
+  budget: { "15-20L": 5, "20-30L": 15, "30-50L": 18, "50L+": 20 },
+  decision: { "self": 10, "joint": 7, "advisor": 3 },
+};
+
+function scoreLead(data) {
+  let score = 0;
+  score += SCORING.netWorth[data.netWorth] || 0;
+  score += SCORING.propertyType[data.propertyType] || 0;
+  score += SCORING.city[data.city] || 0;
+  const wScore = (data.wellnessInterests || []).reduce((s, w) => s + (SCORING.wellnessInterest[w] || 0), 0);
+  score += Math.min(wScore, 30);
+  score += SCORING.timeline[data.timeline] || 0;
+  score += SCORING.budget[data.budgetRange] || 0;
+  score += SCORING.decision[data.decisionRole] || 0;
+  const normalized = Math.round((score / 150) * 100);
+  let grade = normalized >= 75 ? "A" : normalized >= 55 ? "B" : normalized >= 35 ? "C" : "D";
+  let qualification = normalized >= 70 ? "sql" : normalized >= 45 ? "mql" : "prospect";
+  return { score: normalized, grade, qualification };
+}
+
+function estimateDealValue(data) {
+  let m = 1;
+  if (["penthouse", "villa", "bungalow"].includes(data.propertyType)) m = 1.4;
+  if (data.budgetRange === "50L+") m = 1.8;
+  else if (data.budgetRange === "30-50L") m = 1.3;
+  if (data.netWorth === "50cr+") m *= 1.3;
+  return Math.round(ENGINE.AVG_DEAL * m);
+}
+
+// ---- Wellness checkbox toggling ----
+document.querySelectorAll("#wellness-checks .checkbox-item").forEach((item) => {
+  item.addEventListener("click", () => {
+    const cb = item.querySelector("input");
+    cb.checked = !cb.checked;
+    item.classList.toggle("selected", cb.checked);
+  });
+});
+
+// ---- Add Lead ----
+$("score-lead-btn").addEventListener("click", () => {
+  const name = $("lead-name").value.trim();
+  const phone = $("lead-phone").value.trim();
+  if (!name || !phone) {
+    alert("Name and phone are required.");
+    return;
+  }
+
+  const wellnessInterests = [];
+  document.querySelectorAll("#wellness-checks .checkbox-item.selected").forEach((el) => {
+    wellnessInterests.push(el.dataset.value);
+  });
+
+  const data = {
+    name,
+    phone,
+    email: $("lead-email").value.trim(),
+    city: $("lead-city").value,
+    netWorth: $("lead-networth").value,
+    propertyType: $("lead-property").value,
+    timeline: $("lead-timeline").value,
+    budgetRange: $("lead-budget").value,
+    decisionRole: $("lead-decision").value,
+    channel: $("lead-channel").value,
+    wellnessInterests,
+    notes: $("lead-notes").value.trim(),
+  };
+
+  const scoring = scoreLead(data);
+  const dealValue = estimateDealValue(data);
+
+  const lead = {
+    id: "MK-" + Date.now().toString(36).toUpperCase(),
+    ...data,
+    score: scoring.score,
+    grade: scoring.grade,
+    stage: scoring.qualification,
+    estimatedDealValue: dealValue,
+    source: data.channel || "other",
+    tags: [],
+    createdAt: new Date().toISOString(),
+  };
+
+  if (scoring.score >= 70) lead.tags.push("hot-lead");
+  if (data.timeline === "immediate" || data.timeline === "3-months") lead.tags.push("urgent");
+  if (data.netWorth === "50cr+" || data.netWorth === "25cr-50cr") lead.tags.push("uhni");
+  else if (data.netWorth === "10cr-25cr" || data.netWorth === "5cr-10cr") lead.tags.push("hni");
+
+  ENGINE.leads.unshift(lead);
+  saveLeads();
+
+  const nextAction = scoring.score >= 70
+    ? "Schedule a personal wellness kitchen consultation within 24 hours"
+    : scoring.score >= 45
+      ? "Send the Magppie Wellness Kitchen lookbook and schedule a call within 48 hours"
+      : "Add to wellness content nurture sequence";
+
+  const gradeClass = "score-" + scoring.grade.toLowerCase();
+  const resultDiv = $("score-result");
+  $("score-result-content").innerHTML =
+    '<h4>' + name + ' — <span class="score-pill ' + gradeClass + '">Grade ' + scoring.grade + ' · ' + scoring.score + '/100</span></h4>' +
+    '<p style="font-size:14px;color:#6B6A64;margin-top:4px;">Stage: <b>' + scoring.qualification.toUpperCase() + '</b> | Estimated Deal: <b>' + fmtL(dealValue) + '</b></p>' +
+    '<div class="next-action" style="background:var(--green-light);color:var(--green);"><b>Next Action:</b> ' + nextAction + '</div>';
+  resultDiv.classList.add("show");
+  resultDiv.style.background = scoring.score >= 70 ? "var(--green-light)" : scoring.score >= 45 ? "var(--blue-bg)" : "var(--sand-soft)";
+
+  renderLeadTable();
+  updateDashboard();
+});
+
+$("clear-form-btn").addEventListener("click", clearForm);
+
+function clearForm() {
+  ["lead-name", "lead-phone", "lead-email", "lead-notes"].forEach((id) => $(id).value = "");
+  ["lead-city", "lead-networth", "lead-property", "lead-timeline", "lead-budget", "lead-decision", "lead-channel"].forEach((id) => $(id).selectedIndex = 0);
+  document.querySelectorAll("#wellness-checks .checkbox-item").forEach((el) => {
+    el.classList.remove("selected");
+    el.querySelector("input").checked = false;
+  });
+  $("score-result").classList.remove("show");
+}
+
+// ---- Lead Table ----
+function renderLeadTable() {
+  const tbody = $("lead-tbody");
+  tbody.innerHTML = "";
+  const empty = $("leads-empty");
+
+  if (!ENGINE.leads.length) {
+    empty.style.display = "block";
+    $("lead-count").textContent = "0 leads";
+    return;
+  }
+  empty.style.display = "none";
+  $("lead-count").textContent = ENGINE.leads.length + " lead" + (ENGINE.leads.length > 1 ? "s" : "") + " · " + fmtCr(ENGINE.leads.reduce((s, l) => s + l.estimatedDealValue, 0)) + " pipeline";
+
+  const stageLabels = { suspect: "Suspect", prospect: "Prospect", mql: "MQL", sql: "SQL", proposal: "Proposal", negotiation: "Negotiation", won: "Won", lost: "Lost" };
+  const channelLabels = { "architect-referral": "Architect", "designer-referral": "Designer", "real-estate-partner": "Real Estate", "wellness-event": "Wellness Event", "digital-content": "Digital", "client-referral": "Client Ref.", "luxury-media": "Luxury Media", "walk-in": "Walk-in", "social-media": "Social", "other": "Other" };
+
+  ENGINE.leads.forEach((lead, idx) => {
+    const gradeClass = "score-" + lead.grade.toLowerCase();
+    const tags = lead.tags.map((t) => '<span class="tag tag-' + t.replace("hot-lead", "hot") + '">' + t.replace("-", " ") + '</span>').join("");
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td><b>' + lead.name + '</b><br><span style="font-size:11px;color:#8A887F;">' + lead.phone + '</span></td>' +
+      '<td><span class="score-pill ' + gradeClass + '">' + lead.grade + ' · ' + lead.score + '</span></td>' +
+      '<td>' + (stageLabels[lead.stage] || lead.stage) + '</td>' +
+      '<td>' + (lead.city || "—") + '</td>' +
+      '<td>' + fmtL(lead.estimatedDealValue) + '</td>' +
+      '<td>' + (channelLabels[lead.source] || lead.source) + '</td>' +
+      '<td>' + (tags || "—") + '</td>' +
+      '<td><select class="form-select" style="padding:6px 28px 6px 8px;font-size:11px;min-width:110px;" data-idx="' + idx + '">' +
+        Object.entries(stageLabels).map(([k, v]) => '<option value="' + k + '"' + (lead.stage === k ? ' selected' : '') + '>' + v + '</option>').join("") +
+      '</select></td>';
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll("select").forEach((sel) => {
+    sel.addEventListener("change", (e) => {
+      const idx = parseInt(e.target.dataset.idx);
+      ENGINE.leads[idx].stage = e.target.value;
+      saveLeads();
+      renderLeadTable();
+      updateDashboard();
+      renderFunnel();
+    });
+  });
+}
+
+function saveLeads() {
+  localStorage.setItem("magppie_leads", JSON.stringify(ENGINE.leads));
+}
+
+function updateDashboard() {
+  const won = ENGINE.leads.filter((l) => l.stage === "won").length;
+  const wonRevenue = ENGINE.leads.filter((l) => l.stage === "won").reduce((s, l) => s + l.estimatedDealValue, 0);
+  const pct = Math.round((won / ENGINE.DEALS) * 100);
+  $("progress-pct").textContent = won + " / " + ENGINE.DEALS + " deals won (" + pct + "%) — " + fmtCr(wonRevenue);
+  $("progress-fill").style.width = pct + "%";
+
+  const totalPipeline = ENGINE.leads.reduce((s, l) => s + l.estimatedDealValue, 0);
+  $("kpi-total").textContent = fmt(ENGINE.leads.length);
+  const sqls = ENGINE.leads.filter((l) => ["sql", "proposal", "negotiation", "won"].includes(l.stage)).length;
+  $("kpi-sqls").textContent = fmt(sqls);
+}
+
+// ---- Init ----
+renderMonthlyTargets();
+renderFunnel();
+renderChannels();
+renderLeadTable();
+updateDashboard();
+</script>
+</body>
+</html>
