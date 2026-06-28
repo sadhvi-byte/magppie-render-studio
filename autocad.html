@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Magppie CAD Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --bg2: #16213e;
+  --bg3: #0f3460;
+  --accent: #e94560;
+  --accent2: #533483;
+  --text: #e0e0e0;
+  --text2: #8892a4;
+  --grid: #1e2a4a;
+  --snap: #e94560;
+  --border: #2a3a5c;
+  --panel: #161b2e;
+  --hover: #1e2a4a;
+  --selected: rgba(233,69,96,0.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:"DM Sans",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:13px;user-select:none}
+
+/* Layout */
+.app{display:grid;grid-template-rows:40px 1fr 28px;grid-template-columns:44px 220px 1fr 240px;height:100vh;width:100vw}
+.toolbar{grid-row:1/-1;grid-column:1;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;z-index:10}
+.menu-bar{grid-row:1;grid-column:2/5;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:4px}
+.layers-panel{grid-row:2;grid-column:2;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.canvas-wrap{grid-row:2;grid-column:3;position:relative;overflow:hidden;background:var(--bg)}
+.props-panel{grid-row:2;grid-column:4;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.status-bar{grid-row:3;grid-column:1/5;background:var(--panel);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:16px;font-size:11px;font-family:"JetBrains Mono",monospace}
+
+/* Menu bar */
+.menu-bar .brand{font-weight:600;font-size:14px;color:var(--accent);margin-right:12px;letter-spacing:.5px}
+.menu-btn{background:none;border:none;color:var(--text2);font-family:inherit;font-size:12px;padding:6px 10px;cursor:pointer;border-radius:3px}
+.menu-btn:hover{background:var(--hover);color:var(--text)}
+.menu-bar .spacer{flex:1}
+.menu-bar .coords{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--text2)}
+
+/* Toolbar */
+.tool-btn{width:34px;height:34px;border:none;background:none;color:var(--text2);cursor:pointer;border-radius:4px;display:grid;place-items:center;position:relative}
+.tool-btn:hover{background:var(--hover);color:var(--text)}
+.tool-btn.active{background:var(--selected);color:var(--accent)}
+.tool-btn svg{width:18px;height:18px}
+.tool-sep{width:26px;height:1px;background:var(--border);margin:4px 0}
+.tool-btn title{display:none}
+.tool-btn[data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;left:46px;top:50%;transform:translateY(-50%);background:#222;color:#fff;padding:4px 8px;border-radius:3px;font-size:11px;white-space:nowrap;z-index:99;pointer-events:none}
+
+/* Layers */
+.panel-head{padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-head button{background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;line-height:1}
+.panel-head button:hover{color:var(--accent)}
+.layer-list{flex:1;overflow-y:auto;padding:4px 0}
+.layer-item{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;border-left:3px solid transparent}
+.layer-item:hover{background:var(--hover)}
+.layer-item.active{background:var(--selected);border-left-color:var(--accent)}
+.layer-color{width:12px;height:12px;border-radius:2px;flex-shrink:0}
+.layer-name{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-vis{background:none;border:none;color:var(--text2);cursor:pointer;font-size:11px;padding:2px}
+.layer-vis:hover{color:var(--text)}
+
+/* Properties */
+.prop-section{padding:10px 12px;border-bottom:1px solid var(--border)}
+.prop-section h4{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:8px}
+.prop-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.prop-label{font-size:11px;color:var(--text2);width:50px;flex-shrink:0}
+.prop-val{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--text);flex:1;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:4px 6px;outline:none}
+.prop-val:focus{border-color:var(--accent)}
+select.prop-val{cursor:pointer;appearance:none;-webkit-appearance:none}
+.color-pick{width:20px;height:20px;border-radius:3px;border:1px solid var(--border);cursor:pointer;padding:0}
+.color-pick::-webkit-color-swatch-wrapper{padding:0}
+.color-pick::-webkit-color-swatch{border:none;border-radius:2px}
+
+/* Canvas */
+canvas{display:block}
+.canvas-wrap .cmd-line{position:absolute;bottom:0;left:0;right:0;height:28px;background:rgba(15,15,30,.95);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 10px;font-family:"JetBrains Mono",monospace;font-size:12px}
+.cmd-line .prompt{color:var(--accent);margin-right:6px}
+.cmd-line input{flex:1;background:none;border:none;color:var(--text);font-family:inherit;font-size:inherit;outline:none}
+.cmd-line .cmd-hint{color:var(--text2);font-size:11px;margin-left:8px}
+
+/* Status bar */
+.status-bar .status-item{color:var(--text2)}
+.status-bar .status-item.on{color:var(--accent)}
+.status-bar .status-item{cursor:pointer;padding:2px 6px;border-radius:2px}
+.status-bar .status-item:hover{background:var(--hover)}
+.status-bar .spacer{flex:1}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text2)}
+
+/* Context menu */
+.ctx-menu{position:fixed;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:4px 0;min-width:160px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);display:none}
+.ctx-menu.show{display:block}
+.ctx-item{padding:6px 14px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.ctx-item:hover{background:var(--hover)}
+.ctx-item .shortcut{color:var(--text2);font-size:11px;margin-left:20px}
+.ctx-sep{height:1px;background:var(--border);margin:4px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Toolbar -->
+  <div class="toolbar" id="toolbar">
+    <button class="tool-btn active" data-tool="select" data-tooltip="Select (V)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-7 2-3 7z"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="pan" data-tooltip="Pan (H)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M7 7l-5 5 5 5M17 7l5 5-5 5M7 7L12 2l5 5M7 17l5 5 5-5"/></svg>
+    </button>
+    <div class="tool-sep"></div>
+    <button class="tool-btn" data-tool="line" data-tooltip="Line (L)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="polyline" data-tooltip="Polyline (P)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4,18 10,8 16,14 20,4"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="rect" data-tooltip="Rectangle (R)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="1"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="circle" data-tooltip="Circle (C)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="ellipse" data-tooltip="Ellipse (E)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="10" ry="6"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="arc" data-tooltip="Arc (A)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 18 A 10 10 0 0 1 19 18"/></svg>
+    </button>
+    <div class="tool-sep"></div>
+    <button class="tool-btn" data-tool="text" data-tooltip="Text (T)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h12M12 4v16M8 20h8"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="dimension" data-tooltip="Dimension (D)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M4 8v8M20 8v8M12 10v4"/><text x="12" y="9" font-size="6" fill="currentColor" text-anchor="middle" stroke="none">42</text></svg>
+    </button>
+    <div class="tool-sep"></div>
+    <button class="tool-btn" data-tool="measure" data-tooltip="Measure (M)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20L22 4M6 17v3M10 14v3M14 11v3M18 8v3"/></svg>
+    </button>
+    <button class="tool-btn" data-tool="trim" data-tooltip="Trim (TR)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l8-8M12 12l8 8"/><line x1="4" y1="4" x2="20" y2="4" stroke-dasharray="3 2"/></svg>
+    </button>
+    <div class="tool-sep"></div>
+    <button class="tool-btn" data-tool="zoom-extents" data-tooltip="Zoom Extents (Z)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+    </button>
+  </div>
+
+  <!-- Menu bar -->
+  <div class="menu-bar">
+    <span class="brand">MAGPPIE CAD</span>
+    <button class="menu-btn" onclick="doNew()">New</button>
+    <button class="menu-btn" onclick="doSaveSVG()">Export SVG</button>
+    <button class="menu-btn" onclick="doSaveDXF()">Export DXF</button>
+    <button class="menu-btn" onclick="doSaveJSON()">Save</button>
+    <button class="menu-btn" onclick="doLoadJSON()">Open</button>
+    <button class="menu-btn" onclick="doUndo()">Undo</button>
+    <button class="menu-btn" onclick="doRedo()">Redo</button>
+    <span class="spacer"></span>
+    <span class="coords" id="coordsDisplay">X: 0.00 &nbsp; Y: 0.00</span>
+  </div>
+
+  <!-- Layers panel -->
+  <div class="layers-panel">
+    <div class="panel-head">
+      <span>Layers</span>
+      <button onclick="addLayer()" title="Add Layer">+</button>
+    </div>
+    <div class="layer-list" id="layerList"></div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="cad"></canvas>
+    <div class="cmd-line">
+      <span class="prompt">Command:</span>
+      <input type="text" id="cmdInput" placeholder="Type command..." autocomplete="off"/>
+      <span class="cmd-hint" id="cmdHint"></span>
+    </div>
+  </div>
+
+  <!-- Properties panel -->
+  <div class="props-panel" id="propsPanel">
+    <div class="panel-head"><span>Properties</span></div>
+    <div class="prop-section">
+      <h4>Drawing</h4>
+      <div class="prop-row">
+        <span class="prop-label">Color</span>
+        <input type="color" class="color-pick" id="drawColor" value="#e94560"/>
+      </div>
+      <div class="prop-row">
+        <span class="prop-label">Width</span>
+        <input type="number" class="prop-val" id="drawWidth" value="2" min="0.5" max="20" step="0.5"/>
+      </div>
+      <div class="prop-row">
+        <span class="prop-label">Style</span>
+        <select class="prop-val" id="drawStyle">
+          <option value="solid">Solid</option>
+          <option value="dashed">Dashed</option>
+          <option value="dotted">Dotted</option>
+          <option value="dashdot">Dash-Dot</option>
+        </select>
+      </div>
+    </div>
+    <div class="prop-section" id="selectionProps" style="display:none">
+      <h4>Selection</h4>
+      <div id="selPropsContent"></div>
+    </div>
+    <div class="prop-section">
+      <h4>Grid &amp; Snap</h4>
+      <div class="prop-row">
+        <span class="prop-label">Grid</span>
+        <input type="number" class="prop-val" id="gridSize" value="20" min="5" max="200" step="5"/>
+      </div>
+      <div class="prop-row">
+        <span class="prop-label">Snap</span>
+        <input type="number" class="prop-val" id="snapSize" value="10" min="1" max="100" step="1"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-item on" id="statusGrid" onclick="toggleGrid()">GRID</span>
+    <span class="status-item on" id="statusSnap" onclick="toggleSnap()">SNAP</span>
+    <span class="status-item" id="statusOrtho" onclick="toggleOrtho()">ORTHO</span>
+    <span class="status-item" id="statusOsnap" onclick="toggleOsnap()">OSNAP</span>
+    <span class="spacer"></span>
+    <span class="status-item" id="statusInfo">Ready</span>
+    <span class="status-item" id="entityCount">0 entities</span>
+  </div>
+</div>
+
+<!-- Context menu -->
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" onclick="ctxAction('copy')">Copy <span class="shortcut">Ctrl+C</span></div>
+  <div class="ctx-item" onclick="ctxAction('paste')">Paste <span class="shortcut">Ctrl+V</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAction('delete')">Delete <span class="shortcut">Del</span></div>
+  <div class="ctx-item" onclick="ctxAction('duplicate')">Duplicate <span class="shortcut">Ctrl+D</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAction('move-front')">Bring to Front</div>
+  <div class="ctx-item" onclick="ctxAction('move-back')">Send to Back</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAction('properties')">Properties</div>
+</div>
+
+<input type="file" id="fileInput" accept=".json" style="display:none"/>
+
+<script>
+// ─── State ───
+const canvas = document.getElementById('cad');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvasWrap');
+
+let W, H;
+let entities = [];
+let undoStack = [];
+let redoStack = [];
+let clipboard = [];
+let layers = [
+  { name: 'Layer 0', color: '#e94560', visible: true, locked: false },
+  { name: 'Dimensions', color: '#4ecdc4', visible: true, locked: false },
+  { name: 'Construction', color: '#45b7d1', visible: true, locked: false }
+];
+let activeLayer = 0;
+let currentTool = 'select';
+let drawing = false;
+let drawStart = null;
+let drawPoints = [];
+let selected = [];
+let selectionBox = null;
+let panOffset = { x: 0, y: 0 };
+let zoom = 1;
+let isPanning = false;
+let panStart = null;
+let dragStart = null;
+let dragEntities = [];
+let gridEnabled = true;
+let snapEnabled = true;
+let orthoEnabled = false;
+let osnapEnabled = false;
+let gridSize = 20;
+let snapSize = 10;
+let mouseWorld = { x: 0, y: 0 };
+let mouseScreen = { x: 0, y: 0 };
+let cmdHistory = [];
+let cmdHistoryIdx = -1;
+let entityIdCounter = 0;
+let hoverEntity = null;
+let resizeHandle = null;
+let tempText = '';
+
+// ─── Helpers ───
+function genId() { return ++entityIdCounter; }
+
+function screenToWorld(sx, sy) {
+  return {
+    x: (sx - panOffset.x) / zoom,
+    y: (sy - panOffset.y) / zoom
+  };
+}
+
+function worldToScreen(wx, wy) {
+  return {
+    x: wx * zoom + panOffset.x,
+    y: wy * zoom + panOffset.y
+  };
+}
+
+function snapPoint(p) {
+  if (!snapEnabled) return p;
+  return {
+    x: Math.round(p.x / snapSize) * snapSize,
+    y: Math.round(p.y / snapSize) * snapSize
+  };
+}
+
+function applyOrtho(start, end) {
+  if (!orthoEnabled || !start) return end;
+  const dx = Math.abs(end.x - start.x);
+  const dy = Math.abs(end.y - start.y);
+  if (dx > dy) return { x: end.x, y: start.y };
+  return { x: start.x, y: end.y };
+}
+
+function dist(a, b) {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+function pointOnLine(p, a, b, tol) {
+  const len = dist(a, b);
+  if (len === 0) return dist(p, a) < tol;
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / (len * len)));
+  const proj = { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
+  return dist(p, proj) < tol;
+}
+
+function pointInRect(p, x, y, w, h) {
+  return p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
+}
+
+function pointNearEllipse(p, cx, cy, rx, ry, tol) {
+  const val = ((p.x - cx) ** 2) / (rx * rx) + ((p.y - cy) ** 2) / (ry * ry);
+  return Math.abs(val - 1) < tol / Math.min(rx, ry);
+}
+
+function getDash(style) {
+  switch (style) {
+    case 'dashed': return [10, 5];
+    case 'dotted': return [2, 4];
+    case 'dashdot': return [10, 4, 2, 4];
+    default: return [];
+  }
+}
+
+function getBBox(e) {
+  switch (e.type) {
+    case 'line':
+      return { x: Math.min(e.x1, e.x2), y: Math.min(e.y1, e.y2), w: Math.abs(e.x2 - e.x1), h: Math.abs(e.y2 - e.y1) };
+    case 'rect':
+      return { x: e.x, y: e.y, w: e.w, h: e.h };
+    case 'circle':
+      return { x: e.cx - e.r, y: e.cy - e.r, w: e.r * 2, h: e.r * 2 };
+    case 'ellipse':
+      return { x: e.cx - e.rx, y: e.cy - e.ry, w: e.rx * 2, h: e.ry * 2 };
+    case 'arc':
+      return { x: e.cx - e.r, y: e.cy - e.r, w: e.r * 2, h: e.r * 2 };
+    case 'text':
+      ctx.font = `${e.fontSize || 16}px "DM Sans"`;
+      const m = ctx.measureText(e.text);
+      return { x: e.x, y: e.y - (e.fontSize || 16), w: m.width, h: (e.fontSize || 16) * 1.2 };
+    case 'polyline': {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const p of e.points) {
+        minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+      }
+      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    }
+    case 'dimension':
+      return { x: Math.min(e.x1, e.x2) - 10, y: Math.min(e.y1, e.y2) - 30, w: Math.abs(e.x2 - e.x1) + 20, h: Math.abs(e.y2 - e.y1) + 40 };
+    default:
+      return { x: 0, y: 0, w: 0, h: 0 };
+  }
+}
+
+// ─── Hit testing ───
+function hitTest(p, tolerance) {
+  const tol = tolerance / zoom;
+  for (let i = entities.length - 1; i >= 0; i--) {
+    const e = entities[i];
+    const layer = layers[e.layer];
+    if (layer && (!layer.visible || layer.locked)) continue;
+    if (hitEntity(p, e, tol)) return e;
+  }
+  return null;
+}
+
+function hitEntity(p, e, tol) {
+  switch (e.type) {
+    case 'line':
+      return pointOnLine(p, { x: e.x1, y: e.y1 }, { x: e.x2, y: e.y2 }, tol);
+    case 'rect':
+      return pointOnLine(p, { x: e.x, y: e.y }, { x: e.x + e.w, y: e.y }, tol) ||
+             pointOnLine(p, { x: e.x + e.w, y: e.y }, { x: e.x + e.w, y: e.y + e.h }, tol) ||
+             pointOnLine(p, { x: e.x + e.w, y: e.y + e.h }, { x: e.x, y: e.y + e.h }, tol) ||
+             pointOnLine(p, { x: e.x, y: e.y + e.h }, { x: e.x, y: e.y }, tol);
+    case 'circle':
+      return Math.abs(dist(p, { x: e.cx, y: e.cy }) - e.r) < tol;
+    case 'ellipse':
+      return pointNearEllipse(p, e.cx, e.cy, e.rx, e.ry, tol);
+    case 'arc': {
+      const d = dist(p, { x: e.cx, y: e.cy });
+      if (Math.abs(d - e.r) > tol) return false;
+      let angle = Math.atan2(p.y - e.cy, p.x - e.cx);
+      if (angle < 0) angle += Math.PI * 2;
+      let sa = e.startAngle, ea = e.endAngle;
+      if (sa < 0) sa += Math.PI * 2;
+      if (ea < 0) ea += Math.PI * 2;
+      if (ea < sa) return angle >= sa || angle <= ea;
+      return angle >= sa && angle <= ea;
+    }
+    case 'text': {
+      const bb = getBBox(e);
+      return pointInRect(p, bb.x, bb.y, bb.w, bb.h);
+    }
+    case 'polyline':
+      for (let j = 0; j < e.points.length - 1; j++) {
+        if (pointOnLine(p, e.points[j], e.points[j + 1], tol)) return true;
+      }
+      return false;
+    case 'dimension': {
+      return pointOnLine(p, { x: e.x1, y: e.y1 }, { x: e.x2, y: e.y2 }, tol * 2);
+    }
+    default: return false;
+  }
+}
+
+// ─── Undo/Redo ───
+function saveState() {
+  undoStack.push(JSON.stringify(entities));
+  if (undoStack.length > 100) undoStack.shift();
+  redoStack = [];
+}
+
+function doUndo() {
+  if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(entities));
+  entities = JSON.parse(undoStack.pop());
+  selected = [];
+  render();
+  updateEntityCount();
+}
+
+function doRedo() {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(entities));
+  entities = JSON.parse(redoStack.pop());
+  selected = [];
+  render();
+  updateEntityCount();
+}
+
+// ─── Entity creation ───
+function createEntity(type, props) {
+  return {
+    id: genId(),
+    type,
+    layer: activeLayer,
+    color: document.getElementById('drawColor').value,
+    lineWidth: parseFloat(document.getElementById('drawWidth').value),
+    lineStyle: document.getElementById('drawStyle').value,
+    ...props
+  };
+}
+
+function addEntity(e) {
+  saveState();
+  entities.push(e);
+  updateEntityCount();
+  render();
+}
+
+// ─── Rendering ───
+function render() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(panOffset.x, panOffset.y);
+  ctx.scale(zoom, zoom);
+
+  if (gridEnabled) drawGrid();
+  drawEntities();
+  drawSelection();
+  drawPreview();
+
+  ctx.restore();
+  drawCrosshair();
+}
+
+function drawGrid() {
+  const gs = gridSize;
+  const tl = screenToWorld(0, 0);
+  const br = screenToWorld(W, H);
+  const startX = Math.floor(tl.x / gs) * gs;
+  const startY = Math.floor(tl.y / gs) * gs;
+
+  ctx.strokeStyle = '#1e2540';
+  ctx.lineWidth = 0.5 / zoom;
+  ctx.beginPath();
+  for (let x = startX; x <= br.x; x += gs) {
+    ctx.moveTo(x, tl.y);
+    ctx.lineTo(x, br.y);
+  }
+  for (let y = startY; y <= br.y; y += gs) {
+    ctx.moveTo(tl.x, y);
+    ctx.lineTo(br.x, y);
+  }
+  ctx.stroke();
+
+  // Origin
+  ctx.strokeStyle = '#2a3a5c';
+  ctx.lineWidth = 1 / zoom;
+  ctx.beginPath();
+  ctx.moveTo(0, tl.y); ctx.lineTo(0, br.y);
+  ctx.moveTo(tl.x, 0); ctx.lineTo(br.x, 0);
+  ctx.stroke();
+}
+
+function drawEntities() {
+  for (const e of entities) {
+    const layer = layers[e.layer];
+    if (layer && !layer.visible) continue;
+    drawEntity(e, false);
+  }
+}
+
+function drawEntity(e, highlight) {
+  ctx.save();
+  ctx.strokeStyle = highlight ? '#ffcc00' : (e.color || '#e94560');
+  ctx.lineWidth = (e.lineWidth || 2) / zoom;
+  ctx.setLineDash(getDash(e.lineStyle).map(v => v / zoom));
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  switch (e.type) {
+    case 'line':
+      ctx.beginPath();
+      ctx.moveTo(e.x1, e.y1);
+      ctx.lineTo(e.x2, e.y2);
+      ctx.stroke();
+      break;
+    case 'rect':
+      ctx.beginPath();
+      ctx.rect(e.x, e.y, e.w, e.h);
+      if (e.fill) { ctx.fillStyle = e.fill; ctx.fill(); }
+      ctx.stroke();
+      break;
+    case 'circle':
+      ctx.beginPath();
+      ctx.arc(e.cx, e.cy, e.r, 0, Math.PI * 2);
+      if (e.fill) { ctx.fillStyle = e.fill; ctx.fill(); }
+      ctx.stroke();
+      break;
+    case 'ellipse':
+      ctx.beginPath();
+      ctx.ellipse(e.cx, e.cy, e.rx, e.ry, 0, 0, Math.PI * 2);
+      if (e.fill) { ctx.fillStyle = e.fill; ctx.fill(); }
+      ctx.stroke();
+      break;
+    case 'arc':
+      ctx.beginPath();
+      ctx.arc(e.cx, e.cy, e.r, e.startAngle, e.endAngle);
+      ctx.stroke();
+      break;
+    case 'polyline':
+      if (e.points.length < 2) break;
+      ctx.beginPath();
+      ctx.moveTo(e.points[0].x, e.points[0].y);
+      for (let i = 1; i < e.points.length; i++) {
+        ctx.lineTo(e.points[i].x, e.points[i].y);
+      }
+      ctx.stroke();
+      break;
+    case 'text':
+      ctx.setLineDash([]);
+      ctx.fillStyle = e.color || '#e94560';
+      ctx.font = `${(e.fontSize || 16)}px "DM Sans"`;
+      ctx.textBaseline = 'top';
+      ctx.fillText(e.text, e.x, e.y - (e.fontSize || 16));
+      break;
+    case 'dimension': {
+      ctx.setLineDash([]);
+      const dx = e.x2 - e.x1;
+      const dy = e.y2 - e.y1;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const offset = 20;
+      const nx = -dy / length;
+      const ny = dx / length;
+      const ox1 = e.x1 + nx * offset;
+      const oy1 = e.y1 + ny * offset;
+      const ox2 = e.x2 + nx * offset;
+      const oy2 = e.y2 + ny * offset;
+
+      ctx.strokeStyle = e.color || '#4ecdc4';
+      ctx.lineWidth = 1 / zoom;
+      ctx.beginPath();
+      ctx.moveTo(e.x1, e.y1); ctx.lineTo(ox1, oy1);
+      ctx.moveTo(e.x2, e.y2); ctx.lineTo(ox2, oy2);
+      ctx.moveTo(ox1, oy1); ctx.lineTo(ox2, oy2);
+      ctx.stroke();
+
+      // Arrows
+      const arrowSize = 6 / zoom;
+      const angle = Math.atan2(oy2 - oy1, ox2 - ox1);
+      ctx.beginPath();
+      ctx.moveTo(ox1, oy1);
+      ctx.lineTo(ox1 + Math.cos(angle + 0.4) * arrowSize, oy1 + Math.sin(angle + 0.4) * arrowSize);
+      ctx.moveTo(ox1, oy1);
+      ctx.lineTo(ox1 + Math.cos(angle - 0.4) * arrowSize, oy1 + Math.sin(angle - 0.4) * arrowSize);
+      ctx.moveTo(ox2, oy2);
+      ctx.lineTo(ox2 - Math.cos(angle + 0.4) * arrowSize, oy2 - Math.sin(angle + 0.4) * arrowSize);
+      ctx.moveTo(ox2, oy2);
+      ctx.lineTo(ox2 - Math.cos(angle - 0.4) * arrowSize, oy2 - Math.sin(angle - 0.4) * arrowSize);
+      ctx.stroke();
+
+      // Text
+      const mx = (ox1 + ox2) / 2;
+      const my = (oy1 + oy2) / 2;
+      ctx.fillStyle = e.color || '#4ecdc4';
+      ctx.font = `${12 / zoom}px "JetBrains Mono"`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(length.toFixed(1), mx, my - 4 / zoom);
+      break;
+    }
+  }
+  ctx.restore();
+}
+
+function drawSelection() {
+  for (const e of selected) {
+    drawEntity(e, true);
+    const bb = getBBox(e);
+    ctx.save();
+    ctx.strokeStyle = '#ffcc00';
+    ctx.lineWidth = 1 / zoom;
+    ctx.setLineDash([4 / zoom, 4 / zoom]);
+    ctx.strokeRect(bb.x - 4 / zoom, bb.y - 4 / zoom, bb.w + 8 / zoom, bb.h + 8 / zoom);
+
+    // Handles
+    const hs = 5 / zoom;
+    ctx.fillStyle = '#ffcc00';
+    ctx.setLineDash([]);
+    const handles = [
+      { x: bb.x, y: bb.y }, { x: bb.x + bb.w / 2, y: bb.y },
+      { x: bb.x + bb.w, y: bb.y }, { x: bb.x + bb.w, y: bb.y + bb.h / 2 },
+      { x: bb.x + bb.w, y: bb.y + bb.h }, { x: bb.x + bb.w / 2, y: bb.y + bb.h },
+      { x: bb.x, y: bb.y + bb.h }, { x: bb.x, y: bb.y + bb.h / 2 }
+    ];
+    for (const h of handles) {
+      ctx.fillRect(h.x - hs / 2, h.y - hs / 2, hs, hs);
+    }
+    ctx.restore();
+  }
+
+  if (selectionBox) {
+    ctx.save();
+    ctx.strokeStyle = '#4ecdc4';
+    ctx.lineWidth = 1 / zoom;
+    ctx.setLineDash([4 / zoom, 3 / zoom]);
+    ctx.fillStyle = 'rgba(78,205,196,0.08)';
+    const sx = Math.min(selectionBox.x1, selectionBox.x2);
+    const sy = Math.min(selectionBox.y1, selectionBox.y2);
+    const sw = Math.abs(selectionBox.x2 - selectionBox.x1);
+    const sh = Math.abs(selectionBox.y2 - selectionBox.y1);
+    ctx.fillRect(sx, sy, sw, sh);
+    ctx.strokeRect(sx, sy, sw, sh);
+    ctx.restore();
+  }
+}
+
+function drawPreview() {
+  if (!drawing || !drawStart) return;
+  ctx.save();
+  ctx.strokeStyle = '#4ecdc4';
+  ctx.lineWidth = 1.5 / zoom;
+  ctx.setLineDash([6 / zoom, 4 / zoom]);
+
+  const cur = snapPoint(applyOrtho(drawStart, mouseWorld));
+
+  switch (currentTool) {
+    case 'line':
+    case 'dimension':
+    case 'measure':
+      ctx.beginPath();
+      ctx.moveTo(drawStart.x, drawStart.y);
+      ctx.lineTo(cur.x, cur.y);
+      ctx.stroke();
+      if (currentTool === 'measure' || currentTool === 'dimension') {
+        const d = dist(drawStart, cur);
+        ctx.fillStyle = '#4ecdc4';
+        ctx.font = `${12 / zoom}px "JetBrains Mono"`;
+        ctx.textAlign = 'center';
+        ctx.fillText(d.toFixed(1), (drawStart.x + cur.x) / 2, (drawStart.y + cur.y) / 2 - 10 / zoom);
+      }
+      break;
+    case 'rect':
+      ctx.strokeRect(drawStart.x, drawStart.y, cur.x - drawStart.x, cur.y - drawStart.y);
+      break;
+    case 'circle': {
+      const r = dist(drawStart, cur);
+      ctx.beginPath();
+      ctx.arc(drawStart.x, drawStart.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#4ecdc4';
+      ctx.font = `${11 / zoom}px "JetBrains Mono"`;
+      ctx.fillText(`R=${r.toFixed(1)}`, drawStart.x + r + 8 / zoom, drawStart.y);
+      break;
+    }
+    case 'ellipse': {
+      const rx = Math.abs(cur.x - drawStart.x);
+      const ry = Math.abs(cur.y - drawStart.y);
+      ctx.beginPath();
+      ctx.ellipse(drawStart.x, drawStart.y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      break;
+    }
+    case 'arc': {
+      const r = dist(drawStart, cur);
+      ctx.beginPath();
+      ctx.arc(drawStart.x, drawStart.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      break;
+    }
+    case 'polyline':
+      if (drawPoints.length) {
+        ctx.beginPath();
+        ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+        for (let i = 1; i < drawPoints.length; i++) ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+        ctx.lineTo(cur.x, cur.y);
+        ctx.stroke();
+      }
+      break;
+  }
+  ctx.restore();
+}
+
+function drawCrosshair() {
+  if (currentTool === 'select' || currentTool === 'pan') return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(233,69,96,0.4)';
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(mouseScreen.x, 0); ctx.lineTo(mouseScreen.x, H);
+  ctx.moveTo(0, mouseScreen.y); ctx.lineTo(W, mouseScreen.y);
+  ctx.stroke();
+
+  // Snap indicator
+  if (snapEnabled) {
+    const sp = snapPoint(mouseWorld);
+    const ss = worldToScreen(sp.x, sp.y);
+    ctx.strokeStyle = 'var(--snap)';
+    ctx.setLineDash([]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(ss.x, ss.y, 4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ─── Event handlers ───
+function resize() {
+  const r = wrap.getBoundingClientRect();
+  W = r.width;
+  H = r.height - 28;
+  canvas.width = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  render();
+}
+
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  mouseScreen = { x: sx, y: sy };
+  mouseWorld = screenToWorld(sx, sy);
+  const wp = snapPoint(mouseWorld);
+
+  hideContextMenu();
+
+  if (e.button === 1 || (e.button === 0 && (currentTool === 'pan' || e.shiftKey))) {
+    isPanning = true;
+    panStart = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
+    canvas.style.cursor = 'grabbing';
+    return;
+  }
+
+  if (e.button === 2) return;
+
+  switch (currentTool) {
+    case 'select':
+      const hit = hitTest(wp, 8);
+      if (hit) {
+        if (e.ctrlKey || e.metaKey) {
+          const idx = selected.indexOf(hit);
+          if (idx >= 0) selected.splice(idx, 1);
+          else selected.push(hit);
+        } else if (!selected.includes(hit)) {
+          selected = [hit];
+        }
+        dragStart = { ...wp };
+        dragEntities = selected.map(s => ({ entity: s, orig: { ...s } }));
+      } else {
+        selected = [];
+        selectionBox = { x1: wp.x, y1: wp.y, x2: wp.x, y2: wp.y };
+      }
+      updateSelectionProps();
+      break;
+
+    case 'line':
+    case 'dimension':
+    case 'measure':
+      if (!drawing) {
+        drawing = true;
+        drawStart = wp;
+        setHint('Click endpoint or type coordinates');
+      } else {
+        const endPt = applyOrtho(drawStart, wp);
+        if (currentTool === 'line') {
+          addEntity(createEntity('line', { x1: drawStart.x, y1: drawStart.y, x2: endPt.x, y2: endPt.y }));
+        } else if (currentTool === 'dimension') {
+          addEntity(createEntity('dimension', { x1: drawStart.x, y1: drawStart.y, x2: endPt.x, y2: endPt.y, layer: 1 }));
+        } else {
+          const d = dist(drawStart, endPt);
+          setStatus(`Distance: ${d.toFixed(2)} | ΔX: ${Math.abs(endPt.x - drawStart.x).toFixed(2)} | ΔY: ${Math.abs(endPt.y - drawStart.y).toFixed(2)}`);
+        }
+        drawing = false;
+        drawStart = null;
+      }
+      break;
+
+    case 'rect':
+      if (!drawing) {
+        drawing = true;
+        drawStart = wp;
+        setHint('Click opposite corner');
+      } else {
+        const endPt = applyOrtho(drawStart, wp);
+        addEntity(createEntity('rect', { x: Math.min(drawStart.x, endPt.x), y: Math.min(drawStart.y, endPt.y), w: Math.abs(endPt.x - drawStart.x), h: Math.abs(endPt.y - drawStart.y) }));
+        drawing = false;
+        drawStart = null;
+      }
+      break;
+
+    case 'circle':
+      if (!drawing) {
+        drawing = true;
+        drawStart = wp;
+        setHint('Click to set radius');
+      } else {
+        addEntity(createEntity('circle', { cx: drawStart.x, cy: drawStart.y, r: dist(drawStart, wp) }));
+        drawing = false;
+        drawStart = null;
+      }
+      break;
+
+    case 'ellipse':
+      if (!drawing) {
+        drawing = true;
+        drawStart = wp;
+        setHint('Click to set radii');
+      } else {
+        addEntity(createEntity('ellipse', { cx: drawStart.x, cy: drawStart.y, rx: Math.abs(wp.x - drawStart.x), ry: Math.abs(wp.y - drawStart.y) }));
+        drawing = false;
+        drawStart = null;
+      }
+      break;
+
+    case 'arc':
+      if (!drawing) {
+        drawing = true;
+        drawStart = wp;
+        drawPoints = [wp];
+        setHint('Click second point of arc');
+      } else if (drawPoints.length === 1) {
+        drawPoints.push(wp);
+        setHint('Click end point of arc');
+      } else {
+        const center = drawStart;
+        const r = dist(center, drawPoints[1]);
+        const sa = Math.atan2(drawPoints[1].y - center.y, drawPoints[1].x - center.x);
+        const ea = Math.atan2(wp.y - center.y, wp.x - center.x);
+        addEntity(createEntity('arc', { cx: center.x, cy: center.y, r, startAngle: sa, endAngle: ea }));
+        drawing = false;
+        drawStart = null;
+        drawPoints = [];
+      }
+      break;
+
+    case 'polyline':
+      if (!drawing) {
+        drawing = true;
+        drawStart = wp;
+        drawPoints = [wp];
+        setHint('Click next point (Enter/Esc to finish)');
+      } else {
+        drawPoints.push(applyOrtho(drawPoints[drawPoints.length - 1], wp));
+      }
+      break;
+
+    case 'text':
+      const text = prompt('Enter text:');
+      if (text) {
+        addEntity(createEntity('text', { x: wp.x, y: wp.y, text, fontSize: 16 }));
+      }
+      break;
+
+    case 'trim':
+      const trimHit = hitTest(wp, 8);
+      if (trimHit) {
+        saveState();
+        entities = entities.filter(en => en !== trimHit);
+        updateEntityCount();
+      }
+      break;
+  }
+  render();
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  mouseScreen = { x: sx, y: sy };
+  mouseWorld = screenToWorld(sx, sy);
+
+  document.getElementById('coordsDisplay').textContent = `X: ${mouseWorld.x.toFixed(2)}  Y: ${mouseWorld.y.toFixed(2)}`;
+
+  if (isPanning) {
+    panOffset.x = e.clientX - panStart.x;
+    panOffset.y = e.clientY - panStart.y;
+    render();
+    return;
+  }
+
+  if (currentTool === 'select' && dragStart && selected.length) {
+    const dx = snapPoint(mouseWorld).x - dragStart.x;
+    const dy = snapPoint(mouseWorld).y - dragStart.y;
+    for (const de of dragEntities) {
+      const o = de.orig;
+      const en = de.entity;
+      switch (en.type) {
+        case 'line': en.x1 = o.x1 + dx; en.y1 = o.y1 + dy; en.x2 = o.x2 + dx; en.y2 = o.y2 + dy; break;
+        case 'rect': en.x = o.x + dx; en.y = o.y + dy; break;
+        case 'circle': case 'ellipse': case 'arc': en.cx = o.cx + dx; en.cy = o.cy + dy; break;
+        case 'text': en.x = o.x + dx; en.y = o.y + dy; break;
+        case 'dimension': en.x1 = o.x1 + dx; en.y1 = o.y1 + dy; en.x2 = o.x2 + dx; en.y2 = o.y2 + dy; break;
+        case 'polyline':
+          en.points = o.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
+          break;
+      }
+    }
+    render();
+    return;
+  }
+
+  if (selectionBox) {
+    selectionBox.x2 = mouseWorld.x;
+    selectionBox.y2 = mouseWorld.y;
+    render();
+    return;
+  }
+
+  if (drawing) {
+    render();
+    return;
+  }
+
+  // Hover highlight
+  const wp = snapPoint(mouseWorld);
+  const hit = hitTest(wp, 8);
+  if (hit !== hoverEntity) {
+    hoverEntity = hit;
+    canvas.style.cursor = hit ? 'pointer' : (currentTool === 'pan' ? 'grab' : 'crosshair');
+    render();
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (isPanning) {
+    isPanning = false;
+    canvas.style.cursor = currentTool === 'pan' ? 'grab' : (currentTool === 'select' ? 'default' : 'crosshair');
+    return;
+  }
+
+  if (dragStart && selected.length) {
+    const dx = snapPoint(mouseWorld).x - dragStart.x;
+    const dy = snapPoint(mouseWorld).y - dragStart.y;
+    if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+      saveState();
+    }
+    dragStart = null;
+    dragEntities = [];
+    updateSelectionProps();
+  }
+
+  if (selectionBox) {
+    const sx = Math.min(selectionBox.x1, selectionBox.x2);
+    const sy = Math.min(selectionBox.y1, selectionBox.y2);
+    const sw = Math.abs(selectionBox.x2 - selectionBox.x1);
+    const sh = Math.abs(selectionBox.y2 - selectionBox.y1);
+    if (sw > 2 || sh > 2) {
+      selected = entities.filter(en => {
+        const layer = layers[en.layer];
+        if (layer && (!layer.visible || layer.locked)) return false;
+        const bb = getBBox(en);
+        return bb.x >= sx && bb.y >= sy && bb.x + bb.w <= sx + sw && bb.y + bb.h <= sy + sh;
+      });
+    }
+    selectionBox = null;
+    updateSelectionProps();
+    render();
+  }
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY > 0 ? 0.9 : 1.1;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  panOffset.x = mx - (mx - panOffset.x) * factor;
+  panOffset.y = my - (my - panOffset.y) * factor;
+  zoom *= factor;
+  zoom = Math.max(0.05, Math.min(50, zoom));
+  render();
+}, { passive: false });
+
+canvas.addEventListener('dblclick', e => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const wp = screenToWorld(sx, sy);
+  const hit = hitTest(wp, 8 / zoom);
+  if (hit && hit.type === 'text') {
+    const newText = prompt('Edit text:', hit.text);
+    if (newText !== null) {
+      saveState();
+      hit.text = newText;
+      render();
+    }
+  }
+});
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  showContextMenu(e.clientX, e.clientY);
+});
+
+// ─── Keyboard ───
+document.addEventListener('keydown', e => {
+  if (document.activeElement === document.getElementById('cmdInput')) return;
+
+  const key = e.key.toLowerCase();
+
+  if (e.ctrlKey || e.metaKey) {
+    switch (key) {
+      case 'z': e.preventDefault(); if (e.shiftKey) doRedo(); else doUndo(); break;
+      case 'y': e.preventDefault(); doRedo(); break;
+      case 'c': e.preventDefault(); clipboard = selected.map(s => JSON.parse(JSON.stringify(s))); break;
+      case 'v': e.preventDefault(); pasteClipboard(); break;
+      case 'd': e.preventDefault(); duplicateSelected(); break;
+      case 'a': e.preventDefault(); selected = entities.filter(en => { const l = layers[en.layer]; return l && l.visible && !l.locked; }); updateSelectionProps(); render(); break;
+      case 's': e.preventDefault(); doSaveJSON(); break;
+    }
+    return;
+  }
+
+  switch (key) {
+    case 'escape':
+      if (drawing) {
+        if (currentTool === 'polyline' && drawPoints.length >= 2) {
+          addEntity(createEntity('polyline', { points: [...drawPoints] }));
+        }
+        drawing = false;
+        drawStart = null;
+        drawPoints = [];
+        setHint('');
+      }
+      selected = [];
+      updateSelectionProps();
+      render();
+      break;
+    case 'enter':
+      if (drawing && currentTool === 'polyline' && drawPoints.length >= 2) {
+        addEntity(createEntity('polyline', { points: [...drawPoints] }));
+        drawing = false;
+        drawStart = null;
+        drawPoints = [];
+        setHint('');
+        render();
+      }
+      break;
+    case 'delete': case 'backspace':
+      if (selected.length) {
+        saveState();
+        entities = entities.filter(en => !selected.includes(en));
+        selected = [];
+        updateSelectionProps();
+        updateEntityCount();
+        render();
+      }
+      break;
+    case 'v': setTool('select'); break;
+    case 'h': setTool('pan'); break;
+    case 'l': setTool('line'); break;
+    case 'p': setTool('polyline'); break;
+    case 'r': setTool('rect'); break;
+    case 'c': setTool('circle'); break;
+    case 'e': setTool('ellipse'); break;
+    case 'a': setTool('arc'); break;
+    case 't': setTool('text'); break;
+    case 'd': setTool('dimension'); break;
+    case 'm': setTool('measure'); break;
+    case 'g': toggleGrid(); break;
+    case 's': toggleSnap(); break;
+    case 'o': toggleOrtho(); break;
+    case 'f': toggleOsnap(); break;
+    case 'z': zoomExtents(); break;
+    case ' ':
+      e.preventDefault();
+      document.getElementById('cmdInput').focus();
+      break;
+  }
+});
+
+// ─── Command line ───
+const cmdInput = document.getElementById('cmdInput');
+cmdInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const cmd = cmdInput.value.trim();
+    if (cmd) {
+      executeCommand(cmd);
+      cmdHistory.unshift(cmd);
+      cmdHistoryIdx = -1;
+    }
+    cmdInput.value = '';
+  } else if (e.key === 'ArrowUp') {
+    if (cmdHistoryIdx < cmdHistory.length - 1) {
+      cmdHistoryIdx++;
+      cmdInput.value = cmdHistory[cmdHistoryIdx];
+    }
+  } else if (e.key === 'ArrowDown') {
+    if (cmdHistoryIdx > 0) {
+      cmdHistoryIdx--;
+      cmdInput.value = cmdHistory[cmdHistoryIdx];
+    } else {
+      cmdHistoryIdx = -1;
+      cmdInput.value = '';
+    }
+  } else if (e.key === 'Escape') {
+    cmdInput.value = '';
+    cmdInput.blur();
+  }
+});
+
+function executeCommand(cmd) {
+  const parts = cmd.toLowerCase().split(/\s+/);
+  const c = parts[0];
+  switch (c) {
+    case 'line': case 'l': setTool('line'); break;
+    case 'rect': case 'rectangle': setTool('rect'); break;
+    case 'circle': case 'ci': setTool('circle'); break;
+    case 'ellipse': case 'el': setTool('ellipse'); break;
+    case 'arc': case 'ar': setTool('arc'); break;
+    case 'polyline': case 'pl': setTool('polyline'); break;
+    case 'text': case 'tx': setTool('text'); break;
+    case 'dim': case 'dimension': setTool('dimension'); break;
+    case 'measure': case 'dist': setTool('measure'); break;
+    case 'select': case 'sel': setTool('select'); break;
+    case 'pan': setTool('pan'); break;
+    case 'trim': case 'tr': setTool('trim'); break;
+    case 'erase': case 'delete': case 'del':
+      if (selected.length) {
+        saveState();
+        entities = entities.filter(en => !selected.includes(en));
+        selected = [];
+        updateSelectionProps();
+        updateEntityCount();
+        render();
+      }
+      break;
+    case 'copy': case 'co':
+      clipboard = selected.map(s => JSON.parse(JSON.stringify(s)));
+      setStatus(`${clipboard.length} entities copied`);
+      break;
+    case 'paste': case 'pa': pasteClipboard(); break;
+    case 'undo': case 'u': doUndo(); break;
+    case 'redo': doRedo(); break;
+    case 'zoom':
+      if (parts[1] === 'extents' || parts[1] === 'e') zoomExtents();
+      else if (parts[1] && !isNaN(parts[1])) {
+        zoom = parseFloat(parts[1]);
+        render();
+      }
+      break;
+    case 'grid':
+      if (parts[1] && !isNaN(parts[1])) {
+        gridSize = parseInt(parts[1]);
+        document.getElementById('gridSize').value = gridSize;
+      }
+      toggleGrid();
+      break;
+    case 'snap':
+      if (parts[1] && !isNaN(parts[1])) {
+        snapSize = parseInt(parts[1]);
+        document.getElementById('snapSize').value = snapSize;
+      }
+      toggleSnap();
+      break;
+    case 'ortho': toggleOrtho(); break;
+    case 'osnap': toggleOsnap(); break;
+    case 'layer':
+      if (parts[1] === 'new' && parts[2]) {
+        addLayerByName(parts.slice(2).join(' '));
+      } else if (parts[1] && !isNaN(parts[1])) {
+        const idx = parseInt(parts[1]);
+        if (idx >= 0 && idx < layers.length) {
+          activeLayer = idx;
+          renderLayers();
+        }
+      }
+      break;
+    case 'color':
+      if (parts[1]) {
+        document.getElementById('drawColor').value = parts[1];
+        if (selected.length) {
+          saveState();
+          selected.forEach(s => s.color = parts[1]);
+          render();
+        }
+      }
+      break;
+    case 'move':
+      if (selected.length && parts.length >= 3) {
+        const dx = parseFloat(parts[1]);
+        const dy = parseFloat(parts[2]);
+        if (!isNaN(dx) && !isNaN(dy)) {
+          saveState();
+          moveEntities(selected, dx, dy);
+          render();
+        }
+      }
+      break;
+    case 'rotate':
+      if (selected.length && parts[1]) {
+        const angle = parseFloat(parts[1]) * Math.PI / 180;
+        if (!isNaN(angle)) {
+          saveState();
+          rotateEntities(selected, angle);
+          render();
+        }
+      }
+      break;
+    case 'scale':
+      if (selected.length && parts[1]) {
+        const factor = parseFloat(parts[1]);
+        if (!isNaN(factor) && factor > 0) {
+          saveState();
+          scaleEntities(selected, factor);
+          render();
+        }
+      }
+      break;
+    case 'mirror':
+      if (selected.length) {
+        saveState();
+        mirrorEntities(selected, parts[1] || 'x');
+        render();
+      }
+      break;
+    case 'export':
+      if (parts[1] === 'svg') doSaveSVG();
+      else if (parts[1] === 'dxf') doSaveDXF();
+      else doSaveJSON();
+      break;
+    case 'new': doNew(); break;
+    case 'clear': case 'cls':
+      saveState();
+      entities = [];
+      selected = [];
+      updateEntityCount();
+      render();
+      break;
+    case 'help':
+      setStatus('Commands: line rect circle ellipse arc polyline text dim measure select pan trim erase copy paste undo redo zoom grid snap ortho osnap layer color move rotate scale mirror export new clear');
+      break;
+    default:
+      // Try parsing as coordinates x,y for current drawing tool
+      if (drawing && drawStart) {
+        const coords = cmd.split(',').map(Number);
+        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+          const wp = { x: coords[0], y: coords[1] };
+          handleCoordinateInput(wp);
+        } else if (cmd.startsWith('@') && drawStart) {
+          const rel = cmd.slice(1).split(',').map(Number);
+          if (rel.length === 2 && !isNaN(rel[0]) && !isNaN(rel[1])) {
+            const wp = { x: drawStart.x + rel[0], y: drawStart.y + rel[1] };
+            handleCoordinateInput(wp);
+          }
+        } else {
+          setStatus(`Unknown command: ${cmd}`);
+        }
+      } else {
+        setStatus(`Unknown command: ${cmd}`);
+      }
+  }
+}
+
+function handleCoordinateInput(wp) {
+  switch (currentTool) {
+    case 'line':
+      addEntity(createEntity('line', { x1: drawStart.x, y1: drawStart.y, x2: wp.x, y2: wp.y }));
+      drawing = false; drawStart = null;
+      break;
+    case 'rect':
+      addEntity(createEntity('rect', { x: Math.min(drawStart.x, wp.x), y: Math.min(drawStart.y, wp.y), w: Math.abs(wp.x - drawStart.x), h: Math.abs(wp.y - drawStart.y) }));
+      drawing = false; drawStart = null;
+      break;
+    case 'circle':
+      addEntity(createEntity('circle', { cx: drawStart.x, cy: drawStart.y, r: dist(drawStart, wp) }));
+      drawing = false; drawStart = null;
+      break;
+    case 'polyline':
+      drawPoints.push(wp);
+      break;
+  }
+  render();
+}
+
+// ─── Transform operations ───
+function moveEntities(ents, dx, dy) {
+  for (const e of ents) {
+    switch (e.type) {
+      case 'line': case 'dimension': e.x1 += dx; e.y1 += dy; e.x2 += dx; e.y2 += dy; break;
+      case 'rect': case 'text': e.x += dx; e.y += dy; break;
+      case 'circle': case 'ellipse': case 'arc': e.cx += dx; e.cy += dy; break;
+      case 'polyline': e.points.forEach(p => { p.x += dx; p.y += dy; }); break;
+    }
+  }
+}
+
+function rotateEntities(ents, angle) {
+  let cx = 0, cy = 0, count = 0;
+  for (const e of ents) {
+    const bb = getBBox(e);
+    cx += bb.x + bb.w / 2;
+    cy += bb.y + bb.h / 2;
+    count++;
+  }
+  cx /= count; cy /= count;
+  for (const e of ents) rotateEntity(e, cx, cy, angle);
+}
+
+function rotateEntity(e, cx, cy, angle) {
+  const cos = Math.cos(angle), sin = Math.sin(angle);
+  function rotPt(px, py) {
+    const dx = px - cx, dy = py - cy;
+    return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+  }
+  switch (e.type) {
+    case 'line': case 'dimension': {
+      const p1 = rotPt(e.x1, e.y1), p2 = rotPt(e.x2, e.y2);
+      e.x1 = p1.x; e.y1 = p1.y; e.x2 = p2.x; e.y2 = p2.y;
+      break;
+    }
+    case 'rect': {
+      const center = rotPt(e.x + e.w / 2, e.y + e.h / 2);
+      e.x = center.x - e.w / 2;
+      e.y = center.y - e.h / 2;
+      break;
+    }
+    case 'circle': case 'ellipse': case 'arc': {
+      const c = rotPt(e.cx, e.cy);
+      e.cx = c.x; e.cy = c.y;
+      if (e.type === 'arc') { e.startAngle += angle; e.endAngle += angle; }
+      break;
+    }
+    case 'text': { const p = rotPt(e.x, e.y); e.x = p.x; e.y = p.y; break; }
+    case 'polyline':
+      e.points = e.points.map(p => rotPt(p.x, p.y));
+      break;
+  }
+}
+
+function scaleEntities(ents, factor) {
+  let cx = 0, cy = 0, count = 0;
+  for (const e of ents) {
+    const bb = getBBox(e);
+    cx += bb.x + bb.w / 2; cy += bb.y + bb.h / 2; count++;
+  }
+  cx /= count; cy /= count;
+  for (const e of ents) scaleEntity(e, cx, cy, factor);
+}
+
+function scaleEntity(e, cx, cy, f) {
+  function scalePt(px, py) {
+    return { x: cx + (px - cx) * f, y: cy + (py - cy) * f };
+  }
+  switch (e.type) {
+    case 'line': case 'dimension': {
+      const p1 = scalePt(e.x1, e.y1), p2 = scalePt(e.x2, e.y2);
+      e.x1 = p1.x; e.y1 = p1.y; e.x2 = p2.x; e.y2 = p2.y; break;
+    }
+    case 'rect': {
+      const p = scalePt(e.x, e.y);
+      e.x = p.x; e.y = p.y; e.w *= f; e.h *= f; break;
+    }
+    case 'circle': { const c = scalePt(e.cx, e.cy); e.cx = c.x; e.cy = c.y; e.r *= f; break; }
+    case 'ellipse': { const c = scalePt(e.cx, e.cy); e.cx = c.x; e.cy = c.y; e.rx *= f; e.ry *= f; break; }
+    case 'arc': { const c = scalePt(e.cx, e.cy); e.cx = c.x; e.cy = c.y; e.r *= f; break; }
+    case 'text': { const p = scalePt(e.x, e.y); e.x = p.x; e.y = p.y; e.fontSize = (e.fontSize || 16) * f; break; }
+    case 'polyline': e.points = e.points.map(p => scalePt(p.x, p.y)); break;
+  }
+}
+
+function mirrorEntities(ents, axis) {
+  let cx = 0, cy = 0, count = 0;
+  for (const e of ents) {
+    const bb = getBBox(e);
+    cx += bb.x + bb.w / 2; cy += bb.y + bb.h / 2; count++;
+  }
+  cx /= count; cy /= count;
+  for (const e of ents) {
+    switch (e.type) {
+      case 'line': case 'dimension':
+        if (axis === 'x') { e.y1 = cy - (e.y1 - cy); e.y2 = cy - (e.y2 - cy); }
+        else { e.x1 = cx - (e.x1 - cx); e.x2 = cx - (e.x2 - cx); }
+        break;
+      case 'rect': case 'text':
+        if (axis === 'x') e.y = cy - (e.y - cy) - (e.h || 0);
+        else e.x = cx - (e.x - cx) - (e.w || 0);
+        break;
+      case 'circle': case 'ellipse': case 'arc':
+        if (axis === 'x') e.cy = cy - (e.cy - cy);
+        else e.cx = cx - (e.cx - cx);
+        break;
+      case 'polyline':
+        e.points = e.points.map(p =>
+          axis === 'x' ? { x: p.x, y: cy - (p.y - cy) } : { x: cx - (p.x - cx), y: p.y }
+        );
+        break;
+    }
+  }
+}
+
+// ─── Copy/Paste/Duplicate ───
+function pasteClipboard() {
+  if (!clipboard.length) return;
+  saveState();
+  const pasted = clipboard.map(c => {
+    const ne = { ...JSON.parse(JSON.stringify(c)), id: genId() };
+    moveEntities([ne], 20, 20);
+    return ne;
+  });
+  entities.push(...pasted);
+  selected = pasted;
+  updateEntityCount();
+  updateSelectionProps();
+  render();
+}
+
+function duplicateSelected() {
+  if (!selected.length) return;
+  saveState();
+  const dupes = selected.map(s => {
+    const ne = { ...JSON.parse(JSON.stringify(s)), id: genId() };
+    moveEntities([ne], 20, 20);
+    return ne;
+  });
+  entities.push(...dupes);
+  selected = dupes;
+  updateEntityCount();
+  updateSelectionProps();
+  render();
+}
+
+// ─── Tool switching ───
+function setTool(tool) {
+  if (drawing) {
+    if (currentTool === 'polyline' && drawPoints.length >= 2) {
+      addEntity(createEntity('polyline', { points: [...drawPoints] }));
+    }
+    drawing = false;
+    drawStart = null;
+    drawPoints = [];
+  }
+  currentTool = tool;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
+  canvas.style.cursor = tool === 'select' ? 'default' : tool === 'pan' ? 'grab' : 'crosshair';
+  setHint('');
+
+  if (tool === 'zoom-extents') {
+    zoomExtents();
+    setTool('select');
+  }
+}
+
+document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+  btn.addEventListener('click', () => setTool(btn.dataset.tool));
+});
+
+// ─── Toggles ───
+function toggleGrid() {
+  gridEnabled = !gridEnabled;
+  document.getElementById('statusGrid').classList.toggle('on', gridEnabled);
+  render();
+}
+
+function toggleSnap() {
+  snapEnabled = !snapEnabled;
+  document.getElementById('statusSnap').classList.toggle('on', snapEnabled);
+}
+
+function toggleOrtho() {
+  orthoEnabled = !orthoEnabled;
+  document.getElementById('statusOrtho').classList.toggle('on', orthoEnabled);
+}
+
+function toggleOsnap() {
+  osnapEnabled = !osnapEnabled;
+  document.getElementById('statusOsnap').classList.toggle('on', osnapEnabled);
+}
+
+// ─── Zoom extents ───
+function zoomExtents() {
+  if (!entities.length) {
+    panOffset = { x: W / 2, y: H / 2 };
+    zoom = 1;
+    render();
+    return;
+  }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const e of entities) {
+    const bb = getBBox(e);
+    minX = Math.min(minX, bb.x);
+    minY = Math.min(minY, bb.y);
+    maxX = Math.max(maxX, bb.x + bb.w);
+    maxY = Math.max(maxY, bb.y + bb.h);
+  }
+  const pad = 60;
+  const dw = maxX - minX || 100;
+  const dh = maxY - minY || 100;
+  zoom = Math.min((W - pad * 2) / dw, (H - pad * 2) / dh);
+  zoom = Math.max(0.05, Math.min(50, zoom));
+  panOffset.x = W / 2 - (minX + dw / 2) * zoom;
+  panOffset.y = H / 2 - (minY + dh / 2) * zoom;
+  render();
+}
+
+// ─── Layers ───
+function renderLayers() {
+  const list = document.getElementById('layerList');
+  list.innerHTML = '';
+  layers.forEach((l, i) => {
+    const div = document.createElement('div');
+    div.className = 'layer-item' + (i === activeLayer ? ' active' : '');
+    div.innerHTML = `
+      <div class="layer-color" style="background:${l.color}"></div>
+      <span class="layer-name">${l.name}</span>
+      <button class="layer-vis" onclick="event.stopPropagation();toggleLayerVis(${i})">${l.visible ? '👁' : '—'}</button>
+    `;
+    div.addEventListener('click', () => { activeLayer = i; renderLayers(); });
+    list.appendChild(div);
+  });
+}
+
+function addLayer() {
+  const name = prompt('Layer name:');
+  if (name) addLayerByName(name);
+}
+
+function addLayerByName(name) {
+  const colors = ['#e94560', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#fd79a8', '#00b894', '#e17055'];
+  layers.push({ name, color: colors[layers.length % colors.length], visible: true, locked: false });
+  activeLayer = layers.length - 1;
+  renderLayers();
+}
+
+function toggleLayerVis(i) {
+  layers[i].visible = !layers[i].visible;
+  renderLayers();
+  render();
+}
+
+// ─── Properties ───
+function updateSelectionProps() {
+  const panel = document.getElementById('selectionProps');
+  const content = document.getElementById('selPropsContent');
+  if (!selected.length) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  const e = selected[0];
+  let html = `<div class="prop-row"><span class="prop-label">Type</span><span class="prop-val" style="border:none;background:none">${e.type}</span></div>`;
+  html += `<div class="prop-row"><span class="prop-label">Layer</span><span class="prop-val" style="border:none;background:none">${layers[e.layer]?.name || e.layer}</span></div>`;
+
+  switch (e.type) {
+    case 'line': case 'dimension':
+      html += `<div class="prop-row"><span class="prop-label">X1</span><span class="prop-val" style="border:none;background:none">${e.x1.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">Y1</span><span class="prop-val" style="border:none;background:none">${e.y1.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">X2</span><span class="prop-val" style="border:none;background:none">${e.x2.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">Y2</span><span class="prop-val" style="border:none;background:none">${e.y2.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">Length</span><span class="prop-val" style="border:none;background:none">${dist({ x: e.x1, y: e.y1 }, { x: e.x2, y: e.y2 }).toFixed(2)}</span></div>`;
+      break;
+    case 'rect':
+      html += `<div class="prop-row"><span class="prop-label">X</span><span class="prop-val" style="border:none;background:none">${e.x.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">Y</span><span class="prop-val" style="border:none;background:none">${e.y.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">W</span><span class="prop-val" style="border:none;background:none">${e.w.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">H</span><span class="prop-val" style="border:none;background:none">${e.h.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">Area</span><span class="prop-val" style="border:none;background:none">${(e.w * e.h).toFixed(2)}</span></div>`;
+      break;
+    case 'circle':
+      html += `<div class="prop-row"><span class="prop-label">CX</span><span class="prop-val" style="border:none;background:none">${e.cx.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">CY</span><span class="prop-val" style="border:none;background:none">${e.cy.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">R</span><span class="prop-val" style="border:none;background:none">${e.r.toFixed(2)}</span></div>`;
+      html += `<div class="prop-row"><span class="prop-label">Area</span><span class="prop-val" style="border:none;background:none">${(Math.PI * e.r * e.r).toFixed(2)}</span></div>`;
+      break;
+    case 'text':
+      html += `<div class="prop-row"><span class="prop-label">Text</span><span class="prop-val" style="border:none;background:none">${e.text}</span></div>`;
+      break;
+    case 'polyline':
+      html += `<div class="prop-row"><span class="prop-label">Points</span><span class="prop-val" style="border:none;background:none">${e.points.length}</span></div>`;
+      let totalLen = 0;
+      for (let i = 0; i < e.points.length - 1; i++) totalLen += dist(e.points[i], e.points[i + 1]);
+      html += `<div class="prop-row"><span class="prop-label">Length</span><span class="prop-val" style="border:none;background:none">${totalLen.toFixed(2)}</span></div>`;
+      break;
+  }
+  if (selected.length > 1) {
+    html = `<div class="prop-row"><span class="prop-label">Count</span><span class="prop-val" style="border:none;background:none">${selected.length} entities</span></div>`;
+  }
+  content.innerHTML = html;
+}
+
+// ─── Context menu ───
+function showContextMenu(x, y) {
+  const menu = document.getElementById('ctxMenu');
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  menu.classList.add('show');
+}
+
+function hideContextMenu() {
+  document.getElementById('ctxMenu').classList.remove('show');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ctx-menu')) hideContextMenu();
+});
+
+function ctxAction(action) {
+  hideContextMenu();
+  switch (action) {
+    case 'copy': clipboard = selected.map(s => JSON.parse(JSON.stringify(s))); break;
+    case 'paste': pasteClipboard(); break;
+    case 'delete':
+      if (selected.length) {
+        saveState();
+        entities = entities.filter(en => !selected.includes(en));
+        selected = [];
+        updateSelectionProps();
+        updateEntityCount();
+        render();
+      }
+      break;
+    case 'duplicate': duplicateSelected(); break;
+    case 'move-front':
+      for (const s of selected) {
+        const i = entities.indexOf(s);
+        if (i >= 0) { entities.splice(i, 1); entities.push(s); }
+      }
+      render();
+      break;
+    case 'move-back':
+      for (const s of [...selected].reverse()) {
+        const i = entities.indexOf(s);
+        if (i >= 0) { entities.splice(i, 1); entities.unshift(s); }
+      }
+      render();
+      break;
+    case 'properties': break;
+  }
+}
+
+// ─── File operations ───
+function doNew() {
+  if (entities.length && !confirm('Clear all? Unsaved changes will be lost.')) return;
+  entities = [];
+  selected = [];
+  undoStack = [];
+  redoStack = [];
+  panOffset = { x: 0, y: 0 };
+  zoom = 1;
+  updateEntityCount();
+  render();
+  setStatus('New drawing created');
+}
+
+function doSaveJSON() {
+  const data = JSON.stringify({ entities, layers, version: 1 }, null, 2);
+  downloadFile(data, 'drawing.mcad', 'application/json');
+  setStatus('Drawing saved');
+}
+
+function doLoadJSON() {
+  const input = document.getElementById('fileInput');
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        entities = data.entities || [];
+        if (data.layers) layers = data.layers;
+        selected = [];
+        renderLayers();
+        updateEntityCount();
+        zoomExtents();
+        setStatus('Drawing loaded');
+      } catch (err) {
+        setStatus('Error loading file');
+      }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  };
+  input.click();
+}
+
+function doSaveSVG() {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const e of entities) {
+    const bb = getBBox(e);
+    minX = Math.min(minX, bb.x); minY = Math.min(minY, bb.y);
+    maxX = Math.max(maxX, bb.x + bb.w); maxY = Math.max(maxY, bb.y + bb.h);
+  }
+  if (!entities.length) { minX = 0; minY = 0; maxX = 800; maxY = 600; }
+  const pad = 20;
+  const vw = (maxX - minX) + pad * 2;
+  const vh = (maxY - minY) + pad * 2;
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX - pad} ${minY - pad} ${vw} ${vh}" width="${vw}" height="${vh}">\n`;
+  svg += `<rect x="${minX - pad}" y="${minY - pad}" width="${vw}" height="${vh}" fill="#1a1a2e"/>\n`;
+
+  for (const e of entities) {
+    const layer = layers[e.layer];
+    if (layer && !layer.visible) continue;
+    const stroke = e.color || '#e94560';
+    const sw = e.lineWidth || 2;
+    const dashArr = getDash(e.lineStyle);
+    const dashAttr = dashArr.length ? ` stroke-dasharray="${dashArr.join(' ')}"` : '';
+
+    switch (e.type) {
+      case 'line':
+        svg += `  <line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="${stroke}" stroke-width="${sw}"${dashAttr} stroke-linecap="round"/>\n`;
+        break;
+      case 'rect':
+        svg += `  <rect x="${e.x}" y="${e.y}" width="${e.w}" height="${e.h}" stroke="${stroke}" stroke-width="${sw}" fill="${e.fill || 'none'}"${dashAttr}/>\n`;
+        break;
+      case 'circle':
+        svg += `  <circle cx="${e.cx}" cy="${e.cy}" r="${e.r}" stroke="${stroke}" stroke-width="${sw}" fill="${e.fill || 'none'}"${dashAttr}/>\n`;
+        break;
+      case 'ellipse':
+        svg += `  <ellipse cx="${e.cx}" cy="${e.cy}" rx="${e.rx}" ry="${e.ry}" stroke="${stroke}" stroke-width="${sw}" fill="${e.fill || 'none'}"${dashAttr}/>\n`;
+        break;
+      case 'arc':
+        const x1a = e.cx + e.r * Math.cos(e.startAngle);
+        const y1a = e.cy + e.r * Math.sin(e.startAngle);
+        const x2a = e.cx + e.r * Math.cos(e.endAngle);
+        const y2a = e.cy + e.r * Math.sin(e.endAngle);
+        const largeArc = (e.endAngle - e.startAngle + Math.PI * 2) % (Math.PI * 2) > Math.PI ? 1 : 0;
+        svg += `  <path d="M${x1a} ${y1a} A${e.r} ${e.r} 0 ${largeArc} 1 ${x2a} ${y2a}" stroke="${stroke}" stroke-width="${sw}" fill="none"${dashAttr}/>\n`;
+        break;
+      case 'polyline':
+        if (e.points.length >= 2) {
+          const pts = e.points.map(p => `${p.x},${p.y}`).join(' ');
+          svg += `  <polyline points="${pts}" stroke="${stroke}" stroke-width="${sw}" fill="none"${dashAttr} stroke-linecap="round" stroke-linejoin="round"/>\n`;
+        }
+        break;
+      case 'text':
+        svg += `  <text x="${e.x}" y="${e.y}" fill="${stroke}" font-family="sans-serif" font-size="${e.fontSize || 16}">${e.text}</text>\n`;
+        break;
+    }
+  }
+  svg += '</svg>';
+  downloadFile(svg, 'drawing.svg', 'image/svg+xml');
+  setStatus('SVG exported');
+}
+
+function doSaveDXF() {
+  let dxf = '0\nSECTION\n2\nENTITIES\n';
+  for (const e of entities) {
+    switch (e.type) {
+      case 'line':
+        dxf += `0\nLINE\n8\n${layers[e.layer]?.name || 'Layer 0'}\n10\n${e.x1}\n20\n${e.y1}\n30\n0\n11\n${e.x2}\n21\n${e.y2}\n31\n0\n`;
+        break;
+      case 'circle':
+        dxf += `0\nCIRCLE\n8\n${layers[e.layer]?.name || 'Layer 0'}\n10\n${e.cx}\n20\n${e.cy}\n30\n0\n40\n${e.r}\n`;
+        break;
+      case 'arc':
+        dxf += `0\nARC\n8\n${layers[e.layer]?.name || 'Layer 0'}\n10\n${e.cx}\n20\n${e.cy}\n30\n0\n40\n${e.r}\n50\n${(e.startAngle * 180 / Math.PI)}\n51\n${(e.endAngle * 180 / Math.PI)}\n`;
+        break;
+      case 'text':
+        dxf += `0\nTEXT\n8\n${layers[e.layer]?.name || 'Layer 0'}\n10\n${e.x}\n20\n${e.y}\n30\n0\n40\n${e.fontSize || 16}\n1\n${e.text}\n`;
+        break;
+      case 'polyline':
+        dxf += `0\nPOLYLINE\n8\n${layers[e.layer]?.name || 'Layer 0'}\n66\n1\n`;
+        for (const p of e.points) {
+          dxf += `0\nVERTEX\n8\n${layers[e.layer]?.name || 'Layer 0'}\n10\n${p.x}\n20\n${p.y}\n30\n0\n`;
+        }
+        dxf += '0\nSEQEND\n';
+        break;
+    }
+  }
+  dxf += '0\nENDSEC\n0\nEOF\n';
+  downloadFile(dxf, 'drawing.dxf', 'application/dxf');
+  setStatus('DXF exported');
+}
+
+function downloadFile(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── UI helpers ───
+function setHint(text) {
+  document.getElementById('cmdHint').textContent = text;
+}
+
+function setStatus(text) {
+  document.getElementById('statusInfo').textContent = text;
+}
+
+function updateEntityCount() {
+  document.getElementById('entityCount').textContent = `${entities.length} entities`;
+}
+
+// ─── Property change handlers ───
+document.getElementById('gridSize').addEventListener('change', e => {
+  gridSize = parseInt(e.target.value) || 20;
+  render();
+});
+
+document.getElementById('snapSize').addEventListener('change', e => {
+  snapSize = parseInt(e.target.value) || 10;
+});
+
+document.getElementById('drawColor').addEventListener('input', e => {
+  if (selected.length) {
+    saveState();
+    selected.forEach(s => s.color = e.target.value);
+    render();
+  }
+});
+
+document.getElementById('drawWidth').addEventListener('change', e => {
+  if (selected.length) {
+    saveState();
+    selected.forEach(s => s.lineWidth = parseFloat(e.target.value));
+    render();
+  }
+});
+
+document.getElementById('drawStyle').addEventListener('change', e => {
+  if (selected.length) {
+    saveState();
+    selected.forEach(s => s.lineStyle = e.target.value);
+    render();
+  }
+});
+
+// ─── Init ───
+function init() {
+  panOffset = { x: 0, y: 0 };
+  zoom = 1;
+  renderLayers();
+  resize();
+  panOffset = { x: W / 2, y: H / 2 };
+  render();
+  setStatus('Ready — press Space for command line');
+}
+
+window.addEventListener('resize', resize);
+init();
+</script>
+</body>
+</html>
