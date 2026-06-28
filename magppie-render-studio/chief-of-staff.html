@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Magppie · Chief of Staff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green: #1B3A2D;
+    --sand: #C8BFB0;
+    --cream: #F7F4F0;
+    --ink: #2B2B2B;
+    --paper: #FFFFFF;
+    --line: #E4DED4;
+    --sand-soft: #EFEAE2;
+    --green-soft: #2C5440;
+    --green-light: #EEF3EF;
+    --amber: #8A5A2B;
+    --amber-light: #FBF3EC;
+    --amber-line: #ECDAC8;
+    --red: #8A4B33;
+    --red-light: #FBF1EC;
+    --red-line: #E3C9BE;
+    --shadow: 0 1px 2px rgba(43,43,43,0.04), 0 8px 30px rgba(27,58,45,0.06);
+    --shadow-sm: 0 1px 3px rgba(43,43,43,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    background: var(--cream); color: var(--ink);
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+  }
+
+  /* Header */
+  .site-head { border-bottom: 1px solid var(--line); background: var(--cream); position: sticky; top: 0; z-index: 30; }
+  .site-head .wrap { display: flex; align-items: baseline; gap: 16px; padding: 22px 40px; }
+  .wordmark { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 27px; letter-spacing: .5px; color: var(--green); line-height: 1; text-decoration: none; }
+  .eyebrow { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--sand); font-weight: 500; }
+  .head-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+  .head-link { font-size: 13px; color: var(--green); text-decoration: none; opacity: .6; transition: opacity .15s; }
+  .head-link:hover { opacity: 1; }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+  main { padding: 36px 0 80px; }
+
+  /* Brief header */
+  .brief-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 32px; flex-wrap: wrap; }
+  .brief-bar h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 36px; line-height: 1.1; color: var(--green); }
+  .brief-bar .date { font-size: 14px; color: #8A887F; margin-top: 4px; }
+
+  /* Metric cards */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 36px; }
+  @media (max-width: 900px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .metrics { grid-template-columns: 1fr; } }
+  .metric {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 6px;
+    padding: 22px 24px; box-shadow: var(--shadow-sm);
+  }
+  .metric .m-label { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--sand); font-weight: 500; margin-bottom: 8px; }
+  .metric .m-value { font-family: "Cormorant Garamond", serif; font-size: 38px; font-weight: 500; color: var(--green); line-height: 1; }
+  .metric .m-sub { font-size: 12.5px; color: #8A887F; margin-top: 6px; }
+
+  /* Section label */
+  .sec-label { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--green); font-weight: 500; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .sec-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  /* Two-column layout */
+  .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+  @media (max-width: 860px) { .dash-grid { grid-template-columns: 1fr; } }
+
+  /* Pipeline */
+  .pipeline { margin-bottom: 36px; }
+  .pipe-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .pipe-cols { grid-template-columns: repeat(2, 1fr); } }
+  .pipe-col { min-height: 120px; }
+  .pipe-col-head {
+    font-size: 12px; letter-spacing: .08em; font-weight: 500; text-transform: uppercase;
+    padding: 10px 14px; border-radius: 5px 5px 0 0; display: flex; align-items: center; justify-content: space-between;
+  }
+  .pipe-col-head .count { font-size: 11px; background: rgba(255,255,255,.5); border-radius: 10px; padding: 2px 8px; }
+  .pipe-col[data-stage="queued"] .pipe-col-head { background: var(--sand-soft); color: var(--ink); }
+  .pipe-col[data-stage="rendering"] .pipe-col-head { background: var(--amber-light); color: var(--amber); border: 1px solid var(--amber-line); border-bottom: none; }
+  .pipe-col[data-stage="review"] .pipe-col-head { background: #EEF3EF; color: var(--green); border: 1px solid #DCE7DF; border-bottom: none; }
+  .pipe-col[data-stage="delivered"] .pipe-col-head { background: var(--green); color: #fff; }
+  .pipe-col-body { border: 1px solid var(--line); border-top: none; border-radius: 0 0 5px 5px; background: var(--paper); min-height: 80px; padding: 8px; }
+  .pipe-card {
+    padding: 12px 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper);
+    margin-bottom: 6px; cursor: grab; transition: box-shadow .15s, border-color .15s;
+  }
+  .pipe-card:hover { border-color: var(--sand); box-shadow: var(--shadow-sm); }
+  .pipe-card:last-child { margin-bottom: 0; }
+  .pipe-card .pc-client { font-size: 14px; font-weight: 500; color: var(--ink); }
+  .pipe-card .pc-finish { font-size: 12px; color: #8A887F; margin-top: 2px; }
+  .pipe-card .pc-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 11px; color: #AAA8A0; }
+  .pipe-card .pc-avatar { width: 20px; height: 20px; border-radius: 50%; background: var(--sand-soft); border: 1px solid var(--line); display: grid; place-items: center; font-size: 9px; font-weight: 600; color: var(--green); }
+  .pipe-card.dragging { opacity: .5; }
+  .pipe-col-body.drag-over { background: var(--sand-soft); }
+
+  /* Client board */
+  .client-list { list-style: none; }
+  .client-row {
+    display: grid; grid-template-columns: 1fr 120px 100px 40px; align-items: center; gap: 12px;
+    padding: 14px 16px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper);
+    margin-bottom: 8px; font-size: 14px; transition: border-color .15s;
+  }
+  .client-row:hover { border-color: var(--sand); }
+  .client-row .cr-name { font-weight: 500; }
+  .client-row .cr-designer { font-size: 12.5px; color: #8A887F; }
+  .badge {
+    display: inline-block; font-size: 11px; letter-spacing: .06em; font-weight: 500; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 3px; text-align: center;
+  }
+  .badge.sent { background: var(--green-light); color: var(--green); }
+  .badge.draft { background: var(--sand-soft); color: #8A887F; }
+  .badge.follow-up { background: var(--amber-light); color: var(--amber); }
+  .badge.won { background: var(--green); color: #fff; }
+  .badge.lost { background: var(--red-light); color: var(--red); }
+  .client-row .cr-actions { text-align: right; }
+  .icon-btn {
+    width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper);
+    cursor: pointer; display: inline-grid; place-items: center; color: #8A887F; transition: border-color .15s, color .15s;
+  }
+  .icon-btn:hover { border-color: var(--sand); color: var(--ink); }
+
+  /* Action items */
+  .task-list { list-style: none; }
+  .task-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper);
+    margin-bottom: 8px; font-size: 14px; transition: border-color .15s;
+  }
+  .task-row:hover { border-color: var(--sand); }
+  .task-check {
+    width: 20px; height: 20px; border: 1.5px solid var(--sand); border-radius: 3px;
+    background: var(--paper); cursor: pointer; flex-shrink: 0; transition: background .15s, border-color .15s;
+    display: grid; place-items: center;
+  }
+  .task-check:hover { border-color: var(--green); }
+  .task-check.done { background: var(--green); border-color: var(--green); }
+  .task-check.done::after { content: "✓"; color: #fff; font-size: 12px; }
+  .task-text { flex: 1; }
+  .task-text.done { text-decoration: line-through; color: #AAA8A0; }
+  .task-priority {
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600;
+    padding: 3px 8px; border-radius: 3px;
+  }
+  .task-priority.high { background: var(--red-light); color: var(--red); }
+  .task-priority.medium { background: var(--amber-light); color: var(--amber); }
+  .task-priority.low { background: var(--sand-soft); color: #8A887F; }
+
+  /* Add forms */
+  .add-bar {
+    display: flex; gap: 8px; margin-top: 12px;
+  }
+  .add-input {
+    flex: 1; font-family: "DM Sans", sans-serif; font-size: 13.5px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px;
+  }
+  .add-input:focus { outline: none; border-color: var(--green); }
+  .add-input::placeholder { color: #B4B1A6; }
+  .add-btn {
+    font-family: "DM Sans", sans-serif; font-size: 13px; letter-spacing: .03em;
+    border: none; border-radius: 4px; padding: 10px 18px; cursor: pointer;
+    background: var(--green); color: #fff; transition: background .15s;
+    white-space: nowrap;
+  }
+  .add-btn:hover { background: var(--green-soft); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(27,58,45,.18); z-index: 50;
+    place-items: center; backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open { display: grid; }
+  .modal {
+    background: var(--paper); border-radius: 8px; box-shadow: var(--shadow);
+    width: 90%; max-width: 480px; padding: 36px 32px 28px; position: relative;
+  }
+  .modal h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 26px; color: var(--green); margin-bottom: 24px; }
+  .modal .field { display: grid; grid-template-columns: 100px 1fr; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .modal .field-label { font-size: 13px; color: var(--ink); }
+  .modal .textfield, .modal .dropdown {
+    width: 100%; font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px;
+  }
+  .modal .dropdown { cursor: pointer; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232B2B2B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; background-size: 12px; padding-right: 38px;
+  }
+  .modal .textfield:focus, .modal .dropdown:focus { outline: none; border-color: var(--green); }
+  .modal .textfield::placeholder { color: #B4B1A6; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .modal .close-btn {
+    position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; border: none;
+    background: none; cursor: pointer; color: #8A887F; font-size: 18px; display: grid; place-items: center;
+    border-radius: 4px; transition: background .15s;
+  }
+  .modal .close-btn:hover { background: var(--sand-soft); }
+  .btn { font-family: "DM Sans", sans-serif; font-size: 14px; letter-spacing: .04em; border: none; border-radius: 3px; padding: 12px 24px; cursor: pointer; background: var(--green); color: #fff; transition: background .18s; }
+  .btn:hover { background: var(--green-soft); }
+  .btn.ghost { background: transparent; color: var(--green); border: 1px solid var(--line); }
+  .btn.ghost:hover { background: var(--sand-soft); border-color: var(--sand); }
+
+  /* Empty states */
+  .empty { padding: 24px; text-align: center; color: #B4B1A6; font-size: 13.5px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--green); color: #fff; padding: 14px 24px; border-radius: 6px;
+    font-size: 14px; box-shadow: var(--shadow); opacity: 0; transition: transform .3s ease, opacity .3s ease;
+    z-index: 60; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="wordmark" href="index.html">Magppie</a>
+    <span class="eyebrow">Chief of Staff</span>
+    <div class="head-right">
+      <a class="head-link" href="index.html">Render Studio</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- Brief -->
+  <div class="brief-bar">
+    <div>
+      <h1>Good morning</h1>
+      <div class="date" id="today-date"></div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn ghost" id="btn-add-client" type="button">+ Client</button>
+      <button class="btn ghost" id="btn-add-render" type="button">+ Render</button>
+    </div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="m-label">Pipeline</div>
+      <div class="m-value" id="m-pipeline">0</div>
+      <div class="m-sub">active renders</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Delivered today</div>
+      <div class="m-value" id="m-delivered">0</div>
+      <div class="m-sub">renders sent</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Proposals</div>
+      <div class="m-value" id="m-proposals">0</div>
+      <div class="m-sub">awaiting response</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Follow-ups</div>
+      <div class="m-value" id="m-followups">0</div>
+      <div class="m-sub">due this week</div>
+    </div>
+  </div>
+
+  <!-- Render Pipeline -->
+  <div class="pipeline">
+    <div class="sec-label">Render pipeline</div>
+    <div class="pipe-cols" id="pipeline">
+      <div class="pipe-col" data-stage="queued">
+        <div class="pipe-col-head">Queued <span class="count" id="cnt-queued">0</span></div>
+        <div class="pipe-col-body" data-stage="queued"></div>
+      </div>
+      <div class="pipe-col" data-stage="rendering">
+        <div class="pipe-col-head">Rendering <span class="count" id="cnt-rendering">0</span></div>
+        <div class="pipe-col-body" data-stage="rendering"></div>
+      </div>
+      <div class="pipe-col" data-stage="review">
+        <div class="pipe-col-head">In Review <span class="count" id="cnt-review">0</span></div>
+        <div class="pipe-col-body" data-stage="review"></div>
+      </div>
+      <div class="pipe-col" data-stage="delivered">
+        <div class="pipe-col-head">Delivered <span class="count" id="cnt-delivered">0</span></div>
+        <div class="pipe-col-body" data-stage="delivered"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two-col: Clients + Tasks -->
+  <div class="dash-grid">
+    <div>
+      <div class="sec-label">Client proposals</div>
+      <ul class="client-list" id="client-list"></ul>
+      <div class="empty" id="clients-empty">No clients yet. Add one to get started.</div>
+    </div>
+    <div>
+      <div class="sec-label">Action items</div>
+      <ul class="task-list" id="task-list"></ul>
+      <div class="empty" id="tasks-empty">All clear. Nice work.</div>
+      <div class="add-bar">
+        <input class="add-input" id="task-input" type="text" placeholder="Add a task…" />
+        <select class="add-input" id="task-priority" style="flex: 0 0 100px;">
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+        <button class="add-btn" id="btn-add-task" type="button">Add</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Add Client Modal -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <button class="close-btn" type="button" data-close>&times;</button>
+    <h2>Add a client</h2>
+    <div class="field">
+      <label class="field-label">Name</label>
+      <input class="textfield" id="mc-name" type="text" placeholder="e.g. Mr. Raghu" />
+    </div>
+    <div class="field">
+      <label class="field-label">Designer</label>
+      <input class="textfield" id="mc-designer" type="text" placeholder="Designer name" />
+    </div>
+    <div class="field">
+      <label class="field-label">Sales</label>
+      <input class="textfield" id="mc-sales" type="text" placeholder="Sales person" />
+    </div>
+    <div class="field">
+      <label class="field-label">Status</label>
+      <select class="dropdown" id="mc-status">
+        <option value="draft">Draft</option>
+        <option value="sent">Sent</option>
+        <option value="follow-up">Follow-up</option>
+        <option value="won">Won</option>
+        <option value="lost">Lost</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" id="mc-save">Save client</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Render Modal -->
+<div class="modal-overlay" id="modal-render">
+  <div class="modal">
+    <button class="close-btn" type="button" data-close>&times;</button>
+    <h2>Add a render</h2>
+    <div class="field">
+      <label class="field-label">Client</label>
+      <input class="textfield" id="mr-client" type="text" placeholder="Client name" />
+    </div>
+    <div class="field">
+      <label class="field-label">Finish</label>
+      <select class="dropdown" id="mr-finish">
+        <option value="Bianco Lasa">Bianco Lasa</option>
+        <option value="Statuario Gold">Statuario Gold</option>
+        <option value="Onyx Gold">Onyx Gold</option>
+        <option value="Taj">Taj</option>
+        <option value="Cosmic">Cosmic</option>
+        <option value="Trevi">Trevi</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label">Designer</label>
+      <input class="textfield" id="mr-designer" type="text" placeholder="Assigned designer" />
+    </div>
+    <div class="field">
+      <label class="field-label">Stage</label>
+      <select class="dropdown" id="mr-stage">
+        <option value="queued">Queued</option>
+        <option value="rendering">Rendering</option>
+        <option value="review">In Review</option>
+        <option value="delivered">Delivered</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" id="mr-save">Add render</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const STORE_RENDERS = "magppie_cos_renders";
+  const STORE_CLIENTS = "magppie_cos_clients";
+  const STORE_TASKS   = "magppie_cos_tasks";
+
+  function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
+  function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  let renders = load(STORE_RENDERS);
+  let clients = load(STORE_CLIENTS);
+  let tasks   = load(STORE_TASKS);
+
+  // ---- Date ----
+  const now = new Date();
+  const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  $("today-date").textContent = dayNames[now.getDay()] + ", " + monthNames[now.getMonth()] + " " + now.getDate() + ", " + now.getFullYear();
+
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  document.querySelector(".brief-bar h1").textContent = greeting;
+
+  // ---- Toast ----
+  let toastTimer = null;
+  function toast(msg) {
+    const el = $("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+  }
+
+  // ---- Metrics ----
+  function updateMetrics() {
+    const active = renders.filter(r => r.stage !== "delivered").length;
+    const today = new Date().toDateString();
+    const delivered = renders.filter(r => r.stage === "delivered" && new Date(r.updated || r.created).toDateString() === today).length;
+    const proposals = clients.filter(c => c.status === "sent").length;
+    const followups = clients.filter(c => c.status === "follow-up").length;
+
+    $("m-pipeline").textContent = active;
+    $("m-delivered").textContent = delivered;
+    $("m-proposals").textContent = proposals;
+    $("m-followups").textContent = followups;
+  }
+
+  // ---- Pipeline ----
+  function renderPipeline() {
+    const stages = ["queued", "rendering", "review", "delivered"];
+    stages.forEach(stage => {
+      const body = document.querySelector('.pipe-col-body[data-stage="' + stage + '"]');
+      const items = renders.filter(r => r.stage === stage);
+      $("cnt-" + stage).textContent = items.length;
+
+      if (items.length === 0) {
+        body.innerHTML = '<div class="empty" style="padding:16px;">No renders</div>';
+        return;
+      }
+
+      body.innerHTML = items.map(r => {
+        const initials = (r.designer || "?").split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+        const ago = timeAgo(r.updated || r.created);
+        return '<div class="pipe-card" draggable="true" data-id="' + r.id + '">' +
+          '<div class="pc-client">' + esc(r.client) + '</div>' +
+          '<div class="pc-finish">' + esc(r.finish) + '</div>' +
+          '<div class="pc-meta"><span>' + ago + '</span><span class="pc-avatar">' + esc(initials) + '</span></div>' +
+          '</div>';
+      }).join("");
+    });
+
+    setupDragDrop();
+  }
+
+  function timeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return mins + "m ago";
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + "h ago";
+    const days = Math.floor(hrs / 24);
+    return days + "d ago";
+  }
+
+  function esc(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
+
+  // ---- Drag & Drop ----
+  function setupDragDrop() {
+    const cards = document.querySelectorAll(".pipe-card");
+    const bodies = document.querySelectorAll(".pipe-col-body");
+
+    cards.forEach(card => {
+      card.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("text/plain", card.dataset.id);
+        card.classList.add("dragging");
+      });
+      card.addEventListener("dragend", () => card.classList.remove("dragging"));
+    });
+
+    bodies.forEach(body => {
+      body.addEventListener("dragover", e => { e.preventDefault(); body.classList.add("drag-over"); });
+      body.addEventListener("dragleave", () => body.classList.remove("drag-over"));
+      body.addEventListener("drop", e => {
+        e.preventDefault();
+        body.classList.remove("drag-over");
+        const id = e.dataTransfer.getData("text/plain");
+        const newStage = body.dataset.stage;
+        const r = renders.find(x => x.id === id);
+        if (r && r.stage !== newStage) {
+          r.stage = newStage;
+          r.updated = new Date().toISOString();
+          save(STORE_RENDERS, renders);
+          renderPipeline();
+          updateMetrics();
+          toast("Moved to " + newStage);
+        }
+      });
+    });
+  }
+
+  // ---- Clients ----
+  function renderClients() {
+    const list = $("client-list");
+    $("clients-empty").style.display = clients.length ? "none" : "block";
+
+    if (!clients.length) { list.innerHTML = ""; return; }
+
+    list.innerHTML = clients.map(c => {
+      const statusLabel = { draft: "Draft", sent: "Sent", "follow-up": "Follow-up", won: "Won", lost: "Lost" }[c.status] || c.status;
+      return '<li class="client-row" data-id="' + c.id + '">' +
+        '<div><div class="cr-name">' + esc(c.name) + '</div><div class="cr-designer">' + esc(c.designer || "") + (c.sales ? " · " + esc(c.sales) : "") + '</div></div>' +
+        '<div><span class="badge ' + c.status + '">' + esc(statusLabel) + '</span></div>' +
+        '<div class="cr-designer">' + timeAgo(c.updated || c.created) + '</div>' +
+        '<div class="cr-actions"><button class="icon-btn" data-delete-client="' + c.id + '" title="Remove">×</button></div>' +
+        '</li>';
+    }).join("");
+
+    list.querySelectorAll("[data-delete-client]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        clients = clients.filter(c => c.id !== btn.dataset.deleteClient);
+        save(STORE_CLIENTS, clients);
+        renderClients();
+        updateMetrics();
+        toast("Client removed");
+      });
+    });
+
+    list.querySelectorAll(".badge").forEach(badge => {
+      badge.style.cursor = "pointer";
+      badge.addEventListener("click", () => {
+        const row = badge.closest(".client-row");
+        const c = clients.find(x => x.id === row.dataset.id);
+        if (!c) return;
+        const cycle = ["draft", "sent", "follow-up", "won", "lost"];
+        const idx = cycle.indexOf(c.status);
+        c.status = cycle[(idx + 1) % cycle.length];
+        c.updated = new Date().toISOString();
+        save(STORE_CLIENTS, clients);
+        renderClients();
+        updateMetrics();
+      });
+    });
+  }
+
+  // ---- Tasks ----
+  function renderTasks() {
+    const list = $("task-list");
+    const undone = tasks.filter(t => !t.done);
+    const done = tasks.filter(t => t.done);
+    const sorted = [...undone, ...done];
+    $("tasks-empty").style.display = sorted.length ? "none" : "block";
+
+    if (!sorted.length) { list.innerHTML = ""; return; }
+
+    list.innerHTML = sorted.map(t => {
+      return '<li class="task-row" data-id="' + t.id + '">' +
+        '<div class="task-check' + (t.done ? " done" : "") + '" data-toggle="' + t.id + '"></div>' +
+        '<span class="task-text' + (t.done ? " done" : "") + '">' + esc(t.text) + '</span>' +
+        '<span class="task-priority ' + t.priority + '">' + t.priority + '</span>' +
+        '</li>';
+    }).join("");
+
+    list.querySelectorAll("[data-toggle]").forEach(chk => {
+      chk.addEventListener("click", () => {
+        const t = tasks.find(x => x.id === chk.dataset.toggle);
+        if (t) { t.done = !t.done; save(STORE_TASKS, tasks); renderTasks(); }
+      });
+    });
+  }
+
+  // ---- Add Task ----
+  function addTask() {
+    const text = $("task-input").value.trim();
+    if (!text) return;
+    tasks.unshift({ id: uid(), text, priority: $("task-priority").value, done: false, created: new Date().toISOString() });
+    save(STORE_TASKS, tasks);
+    $("task-input").value = "";
+    renderTasks();
+    toast("Task added");
+  }
+  $("btn-add-task").addEventListener("click", addTask);
+  $("task-input").addEventListener("keydown", e => { if (e.key === "Enter") addTask(); });
+
+  // ---- Modals ----
+  function openModal(id) { $(id).classList.add("open"); }
+  function closeModal(id) { $(id).classList.remove("open"); }
+
+  document.querySelectorAll("[data-close]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      btn.closest(".modal-overlay").classList.remove("open");
+    });
+  });
+  document.querySelectorAll(".modal-overlay").forEach(overlay => {
+    overlay.addEventListener("click", e => { if (e.target === overlay) overlay.classList.remove("open"); });
+  });
+
+  $("btn-add-client").addEventListener("click", () => {
+    $("mc-name").value = ""; $("mc-designer").value = ""; $("mc-sales").value = ""; $("mc-status").value = "draft";
+    openModal("modal-client");
+    $("mc-name").focus();
+  });
+
+  $("mc-save").addEventListener("click", () => {
+    const name = $("mc-name").value.trim();
+    if (!name) { $("mc-name").focus(); return; }
+    clients.unshift({
+      id: uid(), name,
+      designer: $("mc-designer").value.trim(),
+      sales: $("mc-sales").value.trim(),
+      status: $("mc-status").value,
+      created: new Date().toISOString()
+    });
+    save(STORE_CLIENTS, clients);
+    closeModal("modal-client");
+    renderClients();
+    updateMetrics();
+    toast("Client added");
+  });
+
+  $("btn-add-render").addEventListener("click", () => {
+    $("mr-client").value = ""; $("mr-designer").value = ""; $("mr-finish").selectedIndex = 0; $("mr-stage").value = "queued";
+    openModal("modal-render");
+    $("mr-client").focus();
+  });
+
+  $("mr-save").addEventListener("click", () => {
+    const client = $("mr-client").value.trim();
+    if (!client) { $("mr-client").focus(); return; }
+    renders.unshift({
+      id: uid(), client,
+      finish: $("mr-finish").value,
+      designer: $("mr-designer").value.trim(),
+      stage: $("mr-stage").value,
+      created: new Date().toISOString()
+    });
+    save(STORE_RENDERS, renders);
+    closeModal("modal-render");
+    renderPipeline();
+    updateMetrics();
+    toast("Render added to pipeline");
+  });
+
+  // ---- Init ----
+  updateMetrics();
+  renderPipeline();
+  renderClients();
+  renderTasks();
+})();
+</script>
+</body>
+</html>
